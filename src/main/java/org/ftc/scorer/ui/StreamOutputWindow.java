@@ -1,5 +1,7 @@
 package org.ftc.scorer.ui;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -12,6 +14,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import org.ftc.scorer.model.Match;
 import org.ftc.scorer.service.MatchTimer;
 
@@ -32,8 +35,8 @@ public class StreamOutputWindow {
     private Label teamNumbersLabel;
     
     // Breakdown labels for detailed scoring
-    private Label redClassifiedLabel, redOverflowLabel, redMotifLabel, redLeaveLabel, redFoulLabel, redMotifDisplayLabel;
-    private Label blueClassifiedLabel, blueOverflowLabel, blueMotifLabel, blueLeaveLabel, blueFoulLabel, blueMotifDisplayLabel;
+    private Label redClassifiedLabel, redOverflowLabel, redMotifLabel, redLeaveLabel, redBaseLabel, redFoulLabel;
+    private Label blueClassifiedLabel, blueOverflowLabel, blueMotifLabel, blueLeaveLabel, blueBaseLabel, blueFoulLabel;
     private Label redTeamLabel, blueTeamLabel;
     
     private StackPane root;
@@ -41,6 +44,8 @@ public class StreamOutputWindow {
     private HBox scoreBar;
     private VBox breakdownOverlay;
     private boolean showingBreakdown = false;
+    private Label motifLabel;
+    private boolean motifHighlighted = false;
     
     public StreamOutputWindow(Match match, MatchTimer matchTimer) {
         this.match = match;
@@ -74,24 +79,331 @@ public class StreamOutputWindow {
     }
     
     private VBox createOverlay() {
-        VBox overlay = new VBox(10);
-        overlay.setAlignment(Pos.TOP_CENTER);
-        overlay.setPadding(new Insets(20));
+        VBox overlay = new VBox(0);
+        overlay.setAlignment(Pos.BOTTOM_CENTER);
+        overlay.setPadding(new Insets(0));
         
-        // Top bar with match info and timer
-        topBar = createTopBar();
-        
-        // Bottom bar with scores
-        scoreBar = createScoreBar();
-        
-        // Position elements
-        VBox.setVgrow(topBar, Priority.NEVER);
+        // Spacer to push everything to bottom
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
         
-        overlay.getChildren().addAll(topBar, spacer, scoreBar);
+        // Bottom bar with all info (docked)
+        scoreBar = createBottomBar();
+        
+        // Keep topBar reference for backwards compatibility (will be hidden)
+        topBar = new HBox();
+        topBar.setVisible(false);
+        
+        overlay.getChildren().addAll(spacer, scoreBar);
         
         return overlay;
+    }
+    
+    /**
+     * Create the new bottom bar with all info - docked at the bottom
+     * Layout: [Red scores] [Center time/phase/motif box] [Blue scores]
+     */
+    private HBox createBottomBar() {
+        HBox bar = new HBox(0);
+        bar.setAlignment(Pos.CENTER);
+        bar.setPadding(new Insets(0));
+        bar.setStyle("-fx-background-color: rgb(0, 0, 0);"); // Solid black, non-transparent
+        bar.setPrefHeight(120);
+        
+        // Left section: Red Alliance scores (from center outward)
+        HBox redSection = createRedScoreSection();
+        
+        // Center: White box with timer, phase, and motif
+        VBox centerBox = createCenterInfoBox();
+        
+        // Right section: Blue Alliance scores (from center outward)
+        HBox blueSection = createBlueScoreSection();
+        
+        bar.getChildren().addAll(redSection, centerBox, blueSection);
+        
+        return bar;
+    }
+    
+    /**
+     * Create center white box with time, phase, and motif
+     */
+    private VBox createCenterInfoBox() {
+        VBox box = new VBox(5);
+        box.setAlignment(Pos.CENTER);
+        box.setPadding(new Insets(10, 20, 10, 20));
+        box.setStyle("-fx-background-color: white; -fx-border-color: #333; -fx-border-width: 2;");
+        box.setMinWidth(180);
+        
+        // Timer
+        timerLabel = new Label("2:30");
+        timerLabel.setFont(Font.font("Arial", FontWeight.BOLD, 36));
+        timerLabel.setTextFill(Color.BLACK);
+        
+        // Phase
+        phaseLabel = new Label("AUTO");
+        phaseLabel.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        phaseLabel.setTextFill(Color.rgb(50, 50, 50));
+        
+        // Motif
+        motifLabel = new Label("PPG");
+        motifLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        motifLabel.setTextFill(Color.rgb(100, 100, 100));
+        
+        box.getChildren().addAll(timerLabel, phaseLabel, motifLabel);
+        
+        return box;
+    }
+    
+    /**
+     * Create Red Alliance score section - from center outward
+     * Layout: [Team] [Fouls] [Pattern] [Leave+Base Stacked] [Classified+Overflow Stacked] [Total Score]
+     */
+    private HBox createRedScoreSection() {
+        HBox section = new HBox(8);
+        section.setAlignment(Pos.CENTER_RIGHT);
+        section.setPadding(new Insets(10));
+        HBox.setHgrow(section, Priority.ALWAYS);
+        
+        Color redColor = Color.rgb(211, 47, 47);
+        
+        // Team info (leftmost) - using text label for team name
+        VBox teamBox = new VBox(2);
+        teamBox.setAlignment(Pos.CENTER);
+        teamBox.setPadding(new Insets(8, 10, 8, 10));
+        teamBox.setStyle("-fx-background-color: white; -fx-border-color: " + toRgbString(redColor) + "; -fx-border-width: 2;");
+        teamBox.setMinWidth(80);
+        teamBox.setMaxWidth(80);
+        
+        Label redLabel = new Label("RED");
+        redLabel.setFont(Font.font("Arial", FontWeight.BOLD, 12));
+        redLabel.setTextFill(redColor);
+        
+        redTeamLabel = new Label("----");
+        redTeamLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        redTeamLabel.setTextFill(Color.BLACK);
+        
+        teamBox.getChildren().addAll(redLabel, redTeamLabel);
+        
+        // Fouls (opponent's fouls give us points)
+        VBox foulsBox = createInfoBox("foul_icon", "0", redColor, 70);
+        redFoulLabel = (Label) ((VBox)foulsBox.getChildren().get(0)).getChildren().get(1);
+        
+        // Pattern points
+        VBox patternBox = createInfoBox("pattern_icon", "0", redColor, 60);
+        redMotifLabel = (Label) ((VBox)patternBox.getChildren().get(0)).getChildren().get(1);
+        
+        // Leave + Base (stacked)
+        VBox leaveBaseBox = createStackedInfoBox("leave_icon", "0", "base_icon", "0", redColor, 70);
+        VBox leaveSection = (VBox) leaveBaseBox.getChildren().get(0);
+        VBox baseSection = (VBox) leaveBaseBox.getChildren().get(2);
+        redLeaveLabel = (Label) leaveSection.getChildren().get(1);
+        redBaseLabel = (Label) baseSection.getChildren().get(1);
+        
+        // Classified + Overflow (stacked)
+        VBox classifiedOverflowBox = createStackedInfoBox("classified_icon", "0", "overflow_icon", "0", redColor, 70);
+        VBox classifiedSection = (VBox) classifiedOverflowBox.getChildren().get(0);
+        VBox overflowSection = (VBox) classifiedOverflowBox.getChildren().get(2);
+        redClassifiedLabel = (Label) classifiedSection.getChildren().get(1);
+        redOverflowLabel = (Label) overflowSection.getChildren().get(1);
+        
+        // Total score (rightmost, closest to center)
+        VBox totalBox = createTotalScoreBox("0", redColor);
+        redScoreLabel = (Label) ((VBox)totalBox.getChildren().get(0)).getChildren().get(0);
+        
+        section.getChildren().addAll(teamBox, foulsBox, patternBox, leaveBaseBox, classifiedOverflowBox, totalBox);
+        
+        return section;
+    }
+    
+    /**
+     * Create Blue Alliance score section - from center outward
+     * Layout: [Total Score] [Classified+Overflow Stacked] [Leave+Base Stacked] [Pattern] [Fouls] [Team]
+     */
+    private HBox createBlueScoreSection() {
+        HBox section = new HBox(8);
+        section.setAlignment(Pos.CENTER_LEFT);
+        section.setPadding(new Insets(10));
+        HBox.setHgrow(section, Priority.ALWAYS);
+        
+        Color blueColor = Color.rgb(25, 118, 210);
+        
+        // Total score (leftmost, closest to center)
+        VBox totalBox = createTotalScoreBox("0", blueColor);
+        blueScoreLabel = (Label) ((VBox)totalBox.getChildren().get(0)).getChildren().get(0);
+        
+        // Classified + Overflow (stacked)
+        VBox classifiedOverflowBox = createStackedInfoBox("classified_icon", "0", "overflow_icon", "0", blueColor, 70);
+        VBox blueClassifiedSection = (VBox) classifiedOverflowBox.getChildren().get(0);
+        VBox blueOverflowSection = (VBox) classifiedOverflowBox.getChildren().get(2);
+        blueClassifiedLabel = (Label) blueClassifiedSection.getChildren().get(1);
+        blueOverflowLabel = (Label) blueOverflowSection.getChildren().get(1);
+        
+        // Leave + Base (stacked)
+        VBox leaveBaseBox = createStackedInfoBox("leave_icon", "0", "base_icon", "0", blueColor, 70);
+        VBox blueLeaveSection = (VBox) leaveBaseBox.getChildren().get(0);
+        VBox blueBaseSection = (VBox) leaveBaseBox.getChildren().get(2);
+        blueLeaveLabel = (Label) blueLeaveSection.getChildren().get(1);
+        blueBaseLabel = (Label) blueBaseSection.getChildren().get(1);
+        
+        // Pattern points
+        VBox patternBox = createInfoBox("pattern_icon", "0", blueColor, 60);
+        blueMotifLabel = (Label) ((VBox)patternBox.getChildren().get(0)).getChildren().get(1);
+        
+        // Fouls (opponent's fouls give us points)
+        VBox foulsBox = createInfoBox("foul_icon", "0", blueColor, 70);
+        blueFoulLabel = (Label) ((VBox)foulsBox.getChildren().get(0)).getChildren().get(1);
+        
+        // Team info (rightmost) - using text label for team name
+        VBox teamBox = new VBox(2);
+        teamBox.setAlignment(Pos.CENTER);
+        teamBox.setPadding(new Insets(8, 10, 8, 10));
+        teamBox.setStyle("-fx-background-color: white; -fx-border-color: " + toRgbString(blueColor) + "; -fx-border-width: 2;");
+        teamBox.setMinWidth(80);
+        teamBox.setMaxWidth(80);
+        
+        Label blueLabel = new Label("BLUE");
+        blueLabel.setFont(Font.font("Arial", FontWeight.BOLD, 12));
+        blueLabel.setTextFill(blueColor);
+        
+        blueTeamLabel = new Label("----");
+        blueTeamLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        blueTeamLabel.setTextFill(Color.BLACK);
+        
+        teamBox.getChildren().addAll(blueLabel, blueTeamLabel);
+        
+        section.getChildren().addAll(totalBox, classifiedOverflowBox, leaveBaseBox, patternBox, foulsBox, teamBox);
+        
+        return section;
+    }
+    
+    /**
+     * Load icon from resources (PNG or SVG)
+     */
+    private ImageView loadIcon(String iconName, int size) {
+        try {
+            // Try PNG first
+            java.net.URL pngResource = getClass().getResource("/images/" + iconName + ".png");
+            if (pngResource != null) {
+                Image image = new Image(pngResource.toString(), size, size, true, true);
+                ImageView imageView = new ImageView(image);
+                imageView.setFitWidth(size);
+                imageView.setFitHeight(size);
+                return imageView;
+            }
+            
+            // Try SVG
+            java.net.URL svgResource = getClass().getResource("/images/" + iconName + ".svg");
+            if (svgResource != null) {
+                Image image = new Image(svgResource.toString(), size, size, true, true);
+                ImageView imageView = new ImageView(image);
+                imageView.setFitWidth(size);
+                imageView.setFitHeight(size);
+                return imageView;
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to load icon: " + iconName);
+        }
+        
+        // Fallback: return empty ImageView
+        return new ImageView();
+    }
+    
+    /**
+     * Create a small white info box with icon and value
+     */
+    private VBox createInfoBox(String iconName, String value, Color color, int width) {
+        VBox box = new VBox(2);
+        box.setAlignment(Pos.CENTER);
+        box.setPadding(new Insets(8, 10, 8, 10));
+        box.setStyle("-fx-background-color: white; -fx-border-color: " + toRgbString(color) + "; -fx-border-width: 2;");
+        box.setMinWidth(width);
+        box.setMaxWidth(width);
+        
+        VBox content = new VBox(2);
+        content.setAlignment(Pos.CENTER);
+        
+        // Load icon (PNG or SVG)
+        ImageView icon = loadIcon(iconName, 24);
+        
+        Label valueText = new Label(value);
+        valueText.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        valueText.setTextFill(Color.BLACK);
+        
+        content.getChildren().addAll(icon, valueText);
+        box.getChildren().add(content);
+        
+        return box;
+    }
+    
+    /**
+     * Create a stacked info box with two categories (icon images)
+     */
+    private VBox createStackedInfoBox(String iconName1, String value1, String iconName2, String value2, Color color, int width) {
+        VBox box = new VBox(0);
+        box.setAlignment(Pos.CENTER);
+        box.setStyle("-fx-border-color: " + toRgbString(color) + "; -fx-border-width: 2;");
+        box.setMinWidth(width);
+        box.setMaxWidth(width);
+        
+        // Top section
+        VBox topSection = new VBox(2);
+        topSection.setAlignment(Pos.CENTER);
+        topSection.setPadding(new Insets(6, 8, 6, 8));
+        topSection.setStyle("-fx-background-color: white;");
+        
+        ImageView topIcon = loadIcon(iconName1, 20);
+        
+        Label topValue = new Label(value1);
+        topValue.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        topValue.setTextFill(Color.BLACK);
+        
+        topSection.getChildren().addAll(topIcon, topValue);
+        
+        // Separator line
+        Region separator = new Region();
+        separator.setPrefHeight(1);
+        separator.setStyle("-fx-background-color: " + toRgbString(color) + ";");
+        
+        // Bottom section
+        VBox bottomSection = new VBox(2);
+        bottomSection.setAlignment(Pos.CENTER);
+        bottomSection.setPadding(new Insets(6, 8, 6, 8));
+        bottomSection.setStyle("-fx-background-color: white;");
+        
+        ImageView bottomIcon = loadIcon(iconName2, 20);
+        
+        Label bottomValue = new Label(value2);
+        bottomValue.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        bottomValue.setTextFill(Color.BLACK);
+        
+        bottomSection.getChildren().addAll(bottomIcon, bottomValue);
+        
+        box.getChildren().addAll(topSection, separator, bottomSection);
+        
+        return box;
+    }
+    
+    /**
+     * Create total score box (larger)
+     */
+    private VBox createTotalScoreBox(String value, Color color) {
+        VBox box = new VBox(2);
+        box.setAlignment(Pos.CENTER);
+        box.setPadding(new Insets(8, 15, 8, 15));
+        box.setStyle("-fx-background-color: " + toRgbString(color) + "; -fx-border-color: white; -fx-border-width: 3;");
+        box.setMinWidth(90);
+        
+        VBox content = new VBox(2);
+        content.setAlignment(Pos.CENTER);
+        
+        Label valueText = new Label(value);
+        valueText.setFont(Font.font("Arial", FontWeight.BOLD, 42));
+        valueText.setTextFill(Color.WHITE);
+        
+        content.getChildren().add(valueText);
+        box.getChildren().add(content);
+        
+        return box;
     }
     
     private HBox createTopBar() {
@@ -100,43 +412,12 @@ public class StreamOutputWindow {
         bar.setPadding(new Insets(10, 20, 10, 20));
         bar.setStyle("-fx-background-color: rgba(0, 0, 0, 0.7); -fx-background-radius: 10;");
         
-        // Team numbers
-        String redTeam = match.getRedTeamNumber().isEmpty() ? "----" : match.getRedTeamNumber();
-        String blueTeam = match.getBlueTeamNumber().isEmpty() ? "----" : match.getBlueTeamNumber();
-        teamNumbersLabel = new Label("Red: " + redTeam + " vs Blue: " + blueTeam);
+        // Team numbers (kept for compatibility)
+        teamNumbersLabel = new Label("");
         teamNumbersLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
         teamNumbersLabel.setTextFill(Color.WHITE);
         
-        // Timer
-        timerLabel = new Label("2:30");
-        timerLabel.setFont(Font.font("Arial", FontWeight.BOLD, 48));
-        timerLabel.setTextFill(Color.WHITE);
-        
-        // Phase
-        phaseLabel = new Label("AUTO");
-        phaseLabel.setFont(Font.font("Arial", FontWeight.BOLD, 24));
-        phaseLabel.setTextFill(Color.YELLOW);
-        
-        bar.getChildren().addAll(teamNumbersLabel, timerLabel, phaseLabel);
-        
-        return bar;
-    }
-    
-    private HBox createScoreBar() {
-        HBox bar = new HBox(0); // No gap - split exactly in half
-        bar.setAlignment(Pos.CENTER);
-        bar.setPadding(new Insets(0));
-        bar.setPrefHeight(150);
-        
-        // Red Alliance Section (left half)
-        VBox redBox = createDetailedScoreBox("RED", Color.rgb(211, 47, 47), true);
-        HBox.setHgrow(redBox, Priority.ALWAYS);
-        
-        // Blue Alliance Section (right half)
-        VBox blueBox = createDetailedScoreBox("BLUE", Color.rgb(25, 118, 210), false);
-        HBox.setHgrow(blueBox, Priority.ALWAYS);
-        
-        bar.getChildren().addAll(redBox, blueBox);
+        bar.getChildren().add(teamNumbersLabel);
         
         return bar;
     }
@@ -145,181 +426,43 @@ public class StreamOutputWindow {
      * Update the score bar layout based on match mode
      */
     public void updateScoreBarForMode() {
-        // Rebuild score bar based on solo mode
+        // Rebuild score bar for solo mode
         scoreBar.getChildren().clear();
         
         if (match.isSingleTeamMode()) {
-            // Solo mode: grey bar spanning full width with only red team
-            VBox soloBox = createDetailedScoreBox("SOLO MODE", Color.rgb(120, 120, 120), true);
-            HBox.setHgrow(soloBox, Priority.ALWAYS);
-            scoreBar.getChildren().add(soloBox);
+            // Solo mode: only show red section and center
+            HBox redSection = createRedScoreSection();
+            VBox centerBox = createCenterInfoBox();
+            
+            // Create grey placeholder for blue
+            HBox blueSection = new HBox();
+            blueSection.setAlignment(Pos.CENTER);
+            blueSection.setPadding(new Insets(10));
+            HBox.setHgrow(blueSection, Priority.ALWAYS);
+            Label soloLabel = new Label("SOLO MODE");
+            soloLabel.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+            soloLabel.setTextFill(Color.rgb(150, 150, 150));
+            blueSection.getChildren().add(soloLabel);
+            
+            scoreBar.getChildren().addAll(redSection, centerBox, blueSection);
         } else {
-            // Traditional mode: split red/blue
-            VBox redBox = createDetailedScoreBox("RED", Color.rgb(211, 47, 47), true);
-            HBox.setHgrow(redBox, Priority.ALWAYS);
+            // Traditional mode: red, center, blue
+            HBox redSection = createRedScoreSection();
+            VBox centerBox = createCenterInfoBox();
+            HBox blueSection = createBlueScoreSection();
             
-            VBox blueBox = createDetailedScoreBox("BLUE", Color.rgb(25, 118, 210), false);
-            HBox.setHgrow(blueBox, Priority.ALWAYS);
-            
-            scoreBar.getChildren().addAll(redBox, blueBox);
+            scoreBar.getChildren().addAll(redSection, centerBox, blueSection);
         }
     }
     
-    private VBox createDetailedScoreBox(String allianceName, Color bgColor, boolean isRed) {
-        VBox box = new VBox(8);
-        box.setAlignment(Pos.CENTER);
-        box.setPadding(new Insets(12, 20, 12, 20));
-        
-        // Semi-transparent background
-        String bgColorString = String.format("rgba(%d, %d, %d, 0.9)",
-            (int)(bgColor.getRed() * 255),
-            (int)(bgColor.getGreen() * 255),
-            (int)(bgColor.getBlue() * 255));
-        box.setStyle("-fx-background-color: " + bgColorString + ";");
-        
-        // Team number
-        Label teamLabel = new Label("Team: ----");
-        teamLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-        teamLabel.setTextFill(Color.WHITE);
-        
-        // Alliance name and main score
-        HBox headerBox = new HBox(10);
-        headerBox.setAlignment(Pos.CENTER);
-        
-        Label nameLabel = new Label(allianceName);
-        nameLabel.setFont(Font.font("Arial", FontWeight.BOLD, 24));
-        nameLabel.setTextFill(Color.WHITE);
-        
-        Label scoreLabel = new Label("0");
-        scoreLabel.setFont(Font.font("Arial", FontWeight.BOLD, 56));
-        scoreLabel.setTextFill(Color.WHITE);
-        
-        if (isRed) {
-            redScoreLabel = scoreLabel;
-            redTeamLabel = teamLabel;
-        } else {
-            blueScoreLabel = scoreLabel;
-            blueTeamLabel = teamLabel;
-        }
-        
-        headerBox.getChildren().addAll(nameLabel, scoreLabel);
-        
-        // Detailed breakdown in 2 columns
-        GridPane breakdownGrid = new GridPane();
-        breakdownGrid.setHgap(20);
-        breakdownGrid.setVgap(2);
-        breakdownGrid.setAlignment(Pos.CENTER);
-        
-        int row = 0;
-        
-        // Left column
-        // Classified
-        Label classifiedIcon = new Label("🎯");
-        classifiedIcon.setFont(Font.font(18));
-        Label classifiedLabel = new Label("Classified: 0");
-        classifiedLabel.setFont(Font.font("Arial", FontWeight.NORMAL, 13));
-        classifiedLabel.setTextFill(Color.WHITE);
-        breakdownGrid.add(classifiedIcon, 0, row);
-        breakdownGrid.add(classifiedLabel, 1, row);
-        
-        // Overflow
-        Label overflowIcon = new Label("📦");
-        overflowIcon.setFont(Font.font(18));
-        Label overflowLabel = new Label("Overflow: 0");
-        overflowLabel.setFont(Font.font("Arial", FontWeight.NORMAL, 13));
-        overflowLabel.setTextFill(Color.WHITE);
-        breakdownGrid.add(overflowIcon, 2, row);
-        breakdownGrid.add(overflowLabel, 3, row++);
-        
-        // Pattern/Motif
-        Label motifIcon = new Label("🔷");
-        motifIcon.setFont(Font.font(18));
-        Label motifLabel = new Label("Pattern: 0");
-        motifLabel.setFont(Font.font("Arial", FontWeight.NORMAL, 13));
-        motifLabel.setTextFill(Color.WHITE);
-        breakdownGrid.add(motifIcon, 0, row);
-        breakdownGrid.add(motifLabel, 1, row);
-        
-        // Leave/Park
-        Label leaveIcon = new Label("🚀");
-        leaveIcon.setFont(Font.font(18));
-        Label leaveLabel = new Label("Leave: 0");
-        leaveLabel.setFont(Font.font("Arial", FontWeight.NORMAL, 13));
-        leaveLabel.setTextFill(Color.WHITE);
-        breakdownGrid.add(leaveIcon, 2, row);
-        breakdownGrid.add(leaveLabel, 3, row++);
-        
-        // Current Motif
-        Label motifDisplayIcon = new Label("🎨");
-        motifDisplayIcon.setFont(Font.font(18));
-        Label motifDisplayLabel = new Label("Motif: PPG");
-        motifDisplayLabel.setFont(Font.font("Arial", FontWeight.NORMAL, 13));
-        motifDisplayLabel.setTextFill(Color.YELLOW);
-        breakdownGrid.add(motifDisplayIcon, 0, row);
-        breakdownGrid.add(motifDisplayLabel, 1, row);
-        
-        // Fouls (opponent's fouls give points)
-        Label foulIcon = new Label("⚠️");
-        foulIcon.setFont(Font.font(18));
-        Label foulLabel = new Label("Opp. Fouls: 0");
-        foulLabel.setFont(Font.font("Arial", FontWeight.NORMAL, 13));
-        foulLabel.setTextFill(Color.WHITE);
-        breakdownGrid.add(foulIcon, 2, row);
-        breakdownGrid.add(foulLabel, 3, row++);
-        
-        // Store labels for updates
-        if (isRed) {
-            redClassifiedLabel = classifiedLabel;
-            redOverflowLabel = overflowLabel;
-            redMotifLabel = motifLabel;
-            redLeaveLabel = leaveLabel;
-            redFoulLabel = foulLabel;
-            redMotifDisplayLabel = motifDisplayLabel;
-        } else {
-            blueClassifiedLabel = classifiedLabel;
-            blueOverflowLabel = overflowLabel;
-            blueMotifLabel = motifLabel;
-            blueLeaveLabel = leaveLabel;
-            blueFoulLabel = foulLabel;
-            blueMotifDisplayLabel = motifDisplayLabel;
-        }
-        
-        box.getChildren().addAll(teamLabel, headerBox, breakdownGrid);
-        
-        return box;
-    }
-    
-    private VBox createScoreBox(String allianceName, Color color) {
-        VBox box = new VBox(5);
-        box.setAlignment(Pos.CENTER);
-        box.setMinWidth(200);
-        box.setStyle("-fx-background-color: rgba(0, 0, 0, 0.8); " +
-                     "-fx-background-radius: 10; " +
-                     "-fx-padding: 15;");
-        
-        Label nameLabel = new Label(allianceName);
-        nameLabel.setFont(Font.font("Arial", FontWeight.BOLD, 24));
-        nameLabel.setTextFill(color);
-        
-        Label scoreLabel = new Label("0");
-        scoreLabel.setFont(Font.font("Arial", FontWeight.BOLD, 72));
-        scoreLabel.setTextFill(Color.WHITE);
-        
-        VBox content = new VBox(5);
-        content.setAlignment(Pos.CENTER);
-        content.getChildren().addAll(nameLabel, scoreLabel);
-        
-        box.getChildren().add(content);
-        
-        return box;
-    }
+
     
     private void startScoreUpdater() {
         // Update UI every 100ms
-        javafx.animation.Timeline timeline = new javafx.animation.Timeline(
-            new javafx.animation.KeyFrame(javafx.util.Duration.millis(100), e -> updateScores())
+        Timeline timeline = new Timeline(
+            new KeyFrame(Duration.millis(100), e -> updateScores())
         );
-        timeline.setCycleCount(javafx.animation.Timeline.INDEFINITE);
+        timeline.setCycleCount(Timeline.INDEFINITE);
         timeline.play();
     }
     
@@ -327,21 +470,34 @@ public class StreamOutputWindow {
         // Use match methods which include opponent penalties
         redScoreLabel.setText(String.valueOf(match.getRedTotalScore()));
         blueScoreLabel.setText(String.valueOf(match.getBlueTotalScore()));
+        
+        // Normal time display - no countdown overlay
         timerLabel.setText(matchTimer.getTimeString());
         
         String phase = matchTimer.currentPhaseProperty().get();
-        phaseLabel.setText(phase);
         
-        // Change phase color based on state
-        if (phase.equals("ENDGAME")) {
-            phaseLabel.setTextFill(Color.ORANGE);
-        } else if (phase.equals("FINISHED")) {
-            phaseLabel.setTextFill(Color.RED);
-        } else if (phase.equals("UNDER REVIEW")) {
-            phaseLabel.setTextFill(Color.YELLOW);
+        // Show phase - handle COUNTDOWN as NOT_STARTED
+        if (phase.equals("COUNTDOWN")) {
+            phaseLabel.setText("READY");
+            phaseLabel.setTextFill(Color.rgb(100, 100, 100));
         } else {
-            phaseLabel.setTextFill(Color.LIGHTGREEN);
+            phaseLabel.setText(phase);
+            
+            // Change phase color in center box - darker colors for white background
+            if (phase.equals("ENDGAME")) {
+                phaseLabel.setTextFill(Color.rgb(200, 100, 0)); // Dark orange
+            } else if (phase.equals("FINISHED")) {
+                phaseLabel.setTextFill(Color.rgb(200, 0, 0)); // Dark red
+            } else if (phase.equals("UNDER REVIEW")) {
+                phaseLabel.setTextFill(Color.rgb(150, 120, 0)); // Dark yellow
+            } else {
+                phaseLabel.setTextFill(Color.rgb(0, 120, 0)); // Dark green
+            }
         }
+        
+        // Update motif display in center box
+        String motifText = match.getRedScore().getMotif().name();
+        motifLabel.setText(motifText);
         
         String redTeam = match.getRedTeamsDisplay();
         String blueTeam = match.getBlueTeamsDisplay();
@@ -356,27 +512,33 @@ public class StreamOutputWindow {
     }
     
     private void updateDetailedBreakdown() {
-        // Current Motif
-        String motifText = match.getRedScore().getMotif().name();
-        
         // Red Alliance breakdown
         int redClassified = match.getRedScore().getAutoClassified() + match.getRedScore().getTeleopClassified();
         int redOverflow = match.getRedScore().getAutoOverflow() + match.getRedScore().getTeleopOverflow();
         int redPattern = match.getRedScore().getAutoPatternMatches() + match.getRedScore().getTeleopPatternMatches();
         int redLeave = (match.getRedScore().isRobot1Leave() ? 1 : 0) + (match.getRedScore().isRobot2Leave() ? 1 : 0);
         
-        // Opponent fouls give points to this alliance
-        int redFoulPoints = match.getBlueScore().getMajorFouls() * 15 + match.getBlueScore().getMinorFouls() * 5;
+        // Get base points from score model
+        int redBasePts = match.getRedScore().getBasePoints();
         
-        redClassifiedLabel.setText("Classified: " + redClassified + " (" + (redClassified * 3) + " pts)");
-        redOverflowLabel.setText("Overflow: " + redOverflow + " (" + redOverflow + " pts)");
-        redMotifLabel.setText("Pattern: " + redPattern + " (" + (redPattern * 2) + " pts)");
-        redLeaveLabel.setText("Leave: " + redLeave + " (" + (redLeave * 3) + " pts)");
-        redFoulLabel.setText("Opp. Fouls: " + redFoulPoints + " pts");
-        redMotifDisplayLabel.setText("Motif: " + motifText);
+        // Opponent fouls give points to this alliance (5 pts minor, 15 pts major)
+        int redFoulPts = match.getBlueScore().getMinorFouls() * 5 + match.getBlueScore().getMajorFouls() * 15;
+        
+        // Calculate points for each category
+        int redClassifiedPts = redClassified * 3;
+        int redOverflowPts = redOverflow;
+        int redPatternPts = redPattern * 2;
+        int redLeavePts = redLeave * 3;
+        
+        redClassifiedLabel.setText(String.valueOf(redClassifiedPts));
+        redOverflowLabel.setText(String.valueOf(redOverflowPts));
+        redMotifLabel.setText(String.valueOf(redPatternPts));
+        redLeaveLabel.setText(String.valueOf(redLeavePts));
+        redBaseLabel.setText(String.valueOf(redBasePts));
+        redFoulLabel.setText(String.valueOf(redFoulPts));
         
         String redTeam = match.getRedTeamsDisplay();
-        redTeamLabel.setText(match.isSingleTeamMode() ? "Team: " + redTeam : "Teams: " + redTeam);
+        redTeamLabel.setText(redTeam);
         
         // Blue Alliance breakdown
         int blueClassified = match.getBlueScore().getAutoClassified() + match.getBlueScore().getTeleopClassified();
@@ -384,18 +546,27 @@ public class StreamOutputWindow {
         int bluePattern = match.getBlueScore().getAutoPatternMatches() + match.getBlueScore().getTeleopPatternMatches();
         int blueLeave = (match.getBlueScore().isRobot1Leave() ? 1 : 0) + (match.getBlueScore().isRobot2Leave() ? 1 : 0);
         
-        // Opponent fouls give points to this alliance
-        int blueFoulPoints = match.getRedScore().getMajorFouls() * 15 + match.getRedScore().getMinorFouls() * 5;
+        // Get base points from score model
+        int blueBasePts = match.getBlueScore().getBasePoints();
         
-        blueClassifiedLabel.setText("Classified: " + blueClassified + " (" + (blueClassified * 3) + " pts)");
-        blueOverflowLabel.setText("Overflow: " + blueOverflow + " (" + blueOverflow + " pts)");
-        blueMotifLabel.setText("Pattern: " + bluePattern + " (" + (bluePattern * 2) + " pts)");
-        blueLeaveLabel.setText("Leave: " + blueLeave + " (" + (blueLeave * 3) + " pts)");
-        blueFoulLabel.setText("Opp. Fouls: " + blueFoulPoints + " pts");
-        blueMotifDisplayLabel.setText("Motif: " + motifText);
+        // Opponent fouls give points to this alliance (5 pts minor, 15 pts major)
+        int blueFoulPts = match.getRedScore().getMinorFouls() * 5 + match.getRedScore().getMajorFouls() * 15;
+        
+        // Calculate points for each category
+        int blueClassifiedPts = blueClassified * 3;
+        int blueOverflowPts = blueOverflow;
+        int bluePatternPts = bluePattern * 2;
+        int blueLeavePts = blueLeave * 3;
+        
+        blueClassifiedLabel.setText(String.valueOf(blueClassifiedPts));
+        blueOverflowLabel.setText(String.valueOf(blueOverflowPts));
+        blueMotifLabel.setText(String.valueOf(bluePatternPts));
+        blueLeaveLabel.setText(String.valueOf(blueLeavePts));
+        blueBaseLabel.setText(String.valueOf(blueBasePts));
+        blueFoulLabel.setText(String.valueOf(blueFoulPts));
         
         String blueTeam = match.getBlueTeamsDisplay();
-        blueTeamLabel.setText("Teams: " + blueTeam);
+        blueTeamLabel.setText(blueTeam);
     }
     
     public void updateWebcamFrame(Image frame) {
@@ -403,13 +574,46 @@ public class StreamOutputWindow {
     }
     
     /**
-     * Show splash screen overlay with countdown and team info
-     * Uses DECODE background image
+     * Highlight motif in yellow for 10 seconds when randomized
+     */
+    public void highlightMotif() {
+        if (motifHighlighted) {
+            return; // Already highlighting
+        }
+        
+        motifHighlighted = true;
+        
+        // Set yellow background
+        motifLabel.setStyle("-fx-background-color: yellow; -fx-padding: 5;");
+        motifLabel.setTextFill(Color.BLACK);
+        
+        // Remove highlight after 10 seconds
+        Timeline timeline = new Timeline(
+            new KeyFrame(
+                Duration.seconds(10),
+                e -> {
+                    motifLabel.setStyle("");
+                    motifLabel.setTextFill(Color.rgb(100, 100, 100));
+                    motifHighlighted = false;
+                }
+            )
+        );
+        timeline.play();
+    }
+    
+    /**
+     * Show splash screen overlay with countdown
+     * Simplified for stream countdown mode - no fading, just DECODE background and countdown
      */
     public void showSplashScreen(String countdown, String teamInfo, String matchType, String motif) {
         // Hide normal scoring elements
         topBar.setVisible(false);
         scoreBar.setVisible(false);
+        
+        // Remove existing splash if any
+        if (root.getChildren().size() > 2) {
+            root.getChildren().remove(root.getChildren().size() - 1);
+        }
         
         // Create splash overlay with DECODE background
         StackPane splashOverlay = new StackPane();
@@ -437,52 +641,27 @@ public class StreamOutputWindow {
         // Dark overlay for text readability
         Region darkOverlay = new Region();
         darkOverlay.setPrefSize(1280, 720);
-        darkOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6);");
+        darkOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.5);");
         splashOverlay.getChildren().add(darkOverlay);
         
-        // Content on top
-        VBox content = new VBox(30);
+        // Content on top - simplified
+        VBox content = new VBox(40);
         content.setAlignment(Pos.CENTER);
         content.setPadding(new Insets(40));
         
-        // DECODE logo/title at top
-        Label titleLabel = new Label("FTC DECODE 2025-2026");
-        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 42));
-        titleLabel.setTextFill(Color.WHITE);
-        titleLabel.setStyle("-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 10, 0, 0, 3);");
-        content.getChildren().add(titleLabel);
+        // "Stream starts in:" header
+        Label headerLabel = new Label("Stream starts in:");
+        headerLabel.setFont(Font.font("Arial", FontWeight.BOLD, 48));
+        headerLabel.setTextFill(Color.WHITE);
+        headerLabel.setStyle("-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 10, 0, 0, 3);");
         
-        if (!countdown.isEmpty()) {
-            Label countdownLabel = new Label(countdown);
-            countdownLabel.setFont(Font.font("Arial", FontWeight.BOLD, 220));
-            countdownLabel.setTextFill(Color.rgb(255, 235, 59)); // Bright yellow
-            countdownLabel.setStyle("-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.9), 15, 0, 0, 5);");
-            content.getChildren().add(countdownLabel);
-        }
+        // Countdown
+        Label countdownLabel = new Label(countdown);
+        countdownLabel.setFont(Font.font("Arial", FontWeight.BOLD, 240));
+        countdownLabel.setTextFill(Color.rgb(255, 235, 59)); // Bright yellow
+        countdownLabel.setStyle("-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.9), 15, 0, 0, 5);");
         
-        if (!teamInfo.isEmpty()) {
-            Label teamLabel = new Label(teamInfo);
-            teamLabel.setFont(Font.font("Arial", FontWeight.BOLD, 52));
-            teamLabel.setTextFill(Color.WHITE);
-            teamLabel.setStyle("-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 10, 0, 0, 3);");
-            content.getChildren().add(teamLabel);
-        }
-        
-        if (!matchType.isEmpty()) {
-            Label typeLabel = new Label(matchType);
-            typeLabel.setFont(Font.font("Arial", FontWeight.BOLD, 36));
-            typeLabel.setTextFill(Color.rgb(100, 181, 246)); // Light blue
-            typeLabel.setStyle("-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 8, 0, 0, 2);");
-            content.getChildren().add(typeLabel);
-        }
-        
-        if (!motif.isEmpty()) {
-            Label motifLabel = new Label(motif);
-            motifLabel.setFont(Font.font("Arial", FontWeight.BOLD, 32));
-            motifLabel.setTextFill(Color.rgb(255, 235, 59)); // Bright yellow
-            motifLabel.setStyle("-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 8, 0, 0, 2);");
-            content.getChildren().add(motifLabel);
-        }
+        content.getChildren().addAll(headerLabel, countdownLabel);
         
         splashOverlay.getChildren().add(content);
         

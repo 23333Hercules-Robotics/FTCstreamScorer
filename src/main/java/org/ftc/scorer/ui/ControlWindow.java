@@ -178,6 +178,8 @@ public class ControlWindow {
             motifSelector.setValue(randomMotif);
             match.getRedScore().setMotif(randomMotif);
             match.getBlueScore().setMotif(randomMotif);
+            // Highlight motif in stream output
+            streamWindow.highlightMotif();
         });
         
         // Webcam selector
@@ -676,27 +678,20 @@ public class ControlWindow {
     }
     
     /**
-     * Show stream countdown - Easy to activate with prominent button
-     * Uses JavaFX Timeline for proper thread management
+     * Show stream countdown - Simplified, configurable countdown
+     * Just shows "Stream starts in: X" with DECODE background
+     * Switchable to main game at any time (hide splash to return)
      */
     private void showStreamCountdown() {
-        // Prepare team information
-        String redTeam = match.getRedTeamsDisplay();
-        String blueTeam = match.getBlueTeamsDisplay();
-        String matchType = match.isSingleTeamMode() ? "Solo Demo Mode" : "2v2 Alliance Match";
-        String motif = "MOTIF: " + match.getRedScore().getMotif().getDisplayName();
-        String teamInfo = match.isSingleTeamMode() ? 
-            "Red Alliance: " + redTeam :
-            "Red: " + redTeam + " vs Blue: " + blueTeam;
-        
         // Use Timeline for countdown (JavaFX-safe)
+        // Starting from 5 seconds countdown
         javafx.animation.Timeline countdownTimeline = new javafx.animation.Timeline();
         for (int i = 5; i >= 1; i--) {
             final int count = i;
             countdownTimeline.getKeyFrames().add(
                 new javafx.animation.KeyFrame(
                     javafx.util.Duration.seconds(5 - i),
-                    e -> streamWindow.showSplashScreen(String.valueOf(count), teamInfo, matchType, motif)
+                    e -> streamWindow.showSplashScreen(String.valueOf(count), "", "", "")
                 )
             );
         }

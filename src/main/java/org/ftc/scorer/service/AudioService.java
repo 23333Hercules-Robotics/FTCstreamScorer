@@ -38,6 +38,10 @@ public class AudioService {
     }
     
     private void playAudio(String key) {
+        playAudio(key, null);
+    }
+    
+    private void playAudio(String key, Runnable onFinished) {
         Media media = audioCache.get(key);
         if (media != null) {
             // Stop current player if playing
@@ -46,8 +50,16 @@ public class AudioService {
             }
             
             currentPlayer = new MediaPlayer(media);
-            currentPlayer.setOnEndOfMedia(() -> currentPlayer.dispose());
+            currentPlayer.setOnEndOfMedia(() -> {
+                if (onFinished != null) {
+                    onFinished.run();
+                }
+                currentPlayer.dispose();
+            });
             currentPlayer.play();
+        } else if (onFinished != null) {
+            // If audio not found, still call callback
+            onFinished.run();
         }
     }
     
@@ -55,12 +67,24 @@ public class AudioService {
         playAudio("countdown");
     }
     
+    public void playCountdown(Runnable onFinished) {
+        playAudio("countdown", onFinished);
+    }
+    
     public void playEndAuto() {
         playAudio("endauto");
     }
     
+    public void playEndAuto(Runnable onFinished) {
+        playAudio("endauto", onFinished);
+    }
+    
     public void playEndMatch() {
         playAudio("endmatch");
+    }
+    
+    public void playEndMatch(Runnable onFinished) {
+        playAudio("endmatch", onFinished);
     }
     
     public void playCharge() {
