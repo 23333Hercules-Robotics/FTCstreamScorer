@@ -360,20 +360,29 @@ public class StreamOutputWindow {
         // Use match methods which include opponent penalties
         redScoreLabel.setText(String.valueOf(match.getRedTotalScore()));
         blueScoreLabel.setText(String.valueOf(match.getBlueTotalScore()));
+        
+        // Normal time display - no countdown overlay
         timerLabel.setText(matchTimer.getTimeString());
         
         String phase = matchTimer.currentPhaseProperty().get();
-        phaseLabel.setText(phase);
         
-        // Change phase color in center box - darker colors for white background
-        if (phase.equals("ENDGAME")) {
-            phaseLabel.setTextFill(Color.rgb(200, 100, 0)); // Dark orange
-        } else if (phase.equals("FINISHED")) {
-            phaseLabel.setTextFill(Color.rgb(200, 0, 0)); // Dark red
-        } else if (phase.equals("UNDER REVIEW")) {
-            phaseLabel.setTextFill(Color.rgb(150, 120, 0)); // Dark yellow
+        // Show phase - handle COUNTDOWN as NOT_STARTED
+        if (phase.equals("COUNTDOWN")) {
+            phaseLabel.setText("READY");
+            phaseLabel.setTextFill(Color.rgb(100, 100, 100));
         } else {
-            phaseLabel.setTextFill(Color.rgb(0, 120, 0)); // Dark green
+            phaseLabel.setText(phase);
+            
+            // Change phase color in center box - darker colors for white background
+            if (phase.equals("ENDGAME")) {
+                phaseLabel.setTextFill(Color.rgb(200, 100, 0)); // Dark orange
+            } else if (phase.equals("FINISHED")) {
+                phaseLabel.setTextFill(Color.rgb(200, 0, 0)); // Dark red
+            } else if (phase.equals("UNDER REVIEW")) {
+                phaseLabel.setTextFill(Color.rgb(150, 120, 0)); // Dark yellow
+            } else {
+                phaseLabel.setTextFill(Color.rgb(0, 120, 0)); // Dark green
+            }
         }
         
         // Update motif display in center box
