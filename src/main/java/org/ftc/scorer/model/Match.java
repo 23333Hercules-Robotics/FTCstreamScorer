@@ -122,7 +122,8 @@ public class Match {
         TRANSITION,  // 8-second period between AUTO and TELEOP (drivers pick up controllers)
         TELEOP,
         END_GAME,
-        FINISHED
+        FINISHED,
+        UNDER_REVIEW  // After match ends, awaiting breakdown display
     }
     
     public enum MatchType {

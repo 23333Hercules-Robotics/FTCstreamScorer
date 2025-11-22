@@ -4,6 +4,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.control.Separator;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
@@ -30,9 +31,16 @@ public class StreamOutputWindow {
     private Label phaseLabel;
     private Label teamNumbersLabel;
     
+    // Breakdown labels for detailed scoring
+    private Label redClassifiedLabel, redOverflowLabel, redMotifLabel, redLeaveLabel, redFoulLabel, redMotifDisplayLabel;
+    private Label blueClassifiedLabel, blueOverflowLabel, blueMotifLabel, blueLeaveLabel, blueFoulLabel, blueMotifDisplayLabel;
+    private Label redTeamLabel, blueTeamLabel;
+    
     private StackPane root;
     private HBox topBar;
     private HBox scoreBar;
+    private VBox breakdownOverlay;
+    private boolean showingBreakdown = false;
     
     public StreamOutputWindow(Match match, MatchTimer matchTimer) {
         this.match = match;
@@ -115,27 +123,146 @@ public class StreamOutputWindow {
     }
     
     private HBox createScoreBar() {
-        HBox bar = new HBox(40);
+        HBox bar = new HBox(0); // No gap - split exactly in half
         bar.setAlignment(Pos.CENTER);
-        bar.setPadding(new Insets(20));
+        bar.setPadding(new Insets(0));
+        bar.setPrefHeight(150);
         
-        // Red Alliance Score
-        VBox redBox = createScoreBox("RED", Color.RED);
-        redScoreLabel = (Label) ((VBox) redBox.getChildren().get(0)).getChildren().get(1);
+        // Red Alliance Section (left half)
+        VBox redBox = createDetailedScoreBox("RED", Color.rgb(211, 47, 47), true);
+        HBox.setHgrow(redBox, Priority.ALWAYS);
         
-        // VS
-        Label vsLabel = new Label("VS");
-        vsLabel.setFont(Font.font("Arial", FontWeight.BOLD, 36));
-        vsLabel.setTextFill(Color.WHITE);
-        vsLabel.setStyle("-fx-background-color: rgba(0, 0, 0, 0.7); -fx-padding: 10;");
+        // Blue Alliance Section (right half)
+        VBox blueBox = createDetailedScoreBox("BLUE", Color.rgb(25, 118, 210), false);
+        HBox.setHgrow(blueBox, Priority.ALWAYS);
         
-        // Blue Alliance Score
-        VBox blueBox = createScoreBox("BLUE", Color.BLUE);
-        blueScoreLabel = (Label) ((VBox) blueBox.getChildren().get(0)).getChildren().get(1);
-        
-        bar.getChildren().addAll(redBox, vsLabel, blueBox);
+        bar.getChildren().addAll(redBox, blueBox);
         
         return bar;
+    }
+    
+    private VBox createDetailedScoreBox(String allianceName, Color bgColor, boolean isRed) {
+        VBox box = new VBox(8);
+        box.setAlignment(Pos.CENTER);
+        box.setPadding(new Insets(12, 20, 12, 20));
+        
+        // Semi-transparent background
+        String bgColorString = String.format("rgba(%d, %d, %d, 0.9)",
+            (int)(bgColor.getRed() * 255),
+            (int)(bgColor.getGreen() * 255),
+            (int)(bgColor.getBlue() * 255));
+        box.setStyle("-fx-background-color: " + bgColorString + ";");
+        
+        // Team number
+        Label teamLabel = new Label("Team: ----");
+        teamLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        teamLabel.setTextFill(Color.WHITE);
+        
+        // Alliance name and main score
+        HBox headerBox = new HBox(10);
+        headerBox.setAlignment(Pos.CENTER);
+        
+        Label nameLabel = new Label(allianceName);
+        nameLabel.setFont(Font.font("Arial", FontWeight.BOLD, 24));
+        nameLabel.setTextFill(Color.WHITE);
+        
+        Label scoreLabel = new Label("0");
+        scoreLabel.setFont(Font.font("Arial", FontWeight.BOLD, 56));
+        scoreLabel.setTextFill(Color.WHITE);
+        
+        if (isRed) {
+            redScoreLabel = scoreLabel;
+            redTeamLabel = teamLabel;
+        } else {
+            blueScoreLabel = scoreLabel;
+            blueTeamLabel = teamLabel;
+        }
+        
+        headerBox.getChildren().addAll(nameLabel, scoreLabel);
+        
+        // Detailed breakdown in 2 columns
+        GridPane breakdownGrid = new GridPane();
+        breakdownGrid.setHgap(20);
+        breakdownGrid.setVgap(2);
+        breakdownGrid.setAlignment(Pos.CENTER);
+        
+        int row = 0;
+        
+        // Left column
+        // Classified
+        Label classifiedIcon = new Label("🎯");
+        classifiedIcon.setFont(Font.font(18));
+        Label classifiedLabel = new Label("Classified: 0");
+        classifiedLabel.setFont(Font.font("Arial", FontWeight.NORMAL, 13));
+        classifiedLabel.setTextFill(Color.WHITE);
+        breakdownGrid.add(classifiedIcon, 0, row);
+        breakdownGrid.add(classifiedLabel, 1, row);
+        
+        // Overflow
+        Label overflowIcon = new Label("📦");
+        overflowIcon.setFont(Font.font(18));
+        Label overflowLabel = new Label("Overflow: 0");
+        overflowLabel.setFont(Font.font("Arial", FontWeight.NORMAL, 13));
+        overflowLabel.setTextFill(Color.WHITE);
+        breakdownGrid.add(overflowIcon, 2, row);
+        breakdownGrid.add(overflowLabel, 3, row++);
+        
+        // Pattern/Motif
+        Label motifIcon = new Label("🔷");
+        motifIcon.setFont(Font.font(18));
+        Label motifLabel = new Label("Pattern: 0");
+        motifLabel.setFont(Font.font("Arial", FontWeight.NORMAL, 13));
+        motifLabel.setTextFill(Color.WHITE);
+        breakdownGrid.add(motifIcon, 0, row);
+        breakdownGrid.add(motifLabel, 1, row);
+        
+        // Leave/Park
+        Label leaveIcon = new Label("🚀");
+        leaveIcon.setFont(Font.font(18));
+        Label leaveLabel = new Label("Leave: 0");
+        leaveLabel.setFont(Font.font("Arial", FontWeight.NORMAL, 13));
+        leaveLabel.setTextFill(Color.WHITE);
+        breakdownGrid.add(leaveIcon, 2, row);
+        breakdownGrid.add(leaveLabel, 3, row++);
+        
+        // Current Motif
+        Label motifDisplayIcon = new Label("🎨");
+        motifDisplayIcon.setFont(Font.font(18));
+        Label motifDisplayLabel = new Label("Motif: PPG");
+        motifDisplayLabel.setFont(Font.font("Arial", FontWeight.NORMAL, 13));
+        motifDisplayLabel.setTextFill(Color.YELLOW);
+        breakdownGrid.add(motifDisplayIcon, 0, row);
+        breakdownGrid.add(motifDisplayLabel, 1, row);
+        
+        // Fouls (opponent's fouls give points)
+        Label foulIcon = new Label("⚠️");
+        foulIcon.setFont(Font.font(18));
+        Label foulLabel = new Label("Opp. Fouls: 0");
+        foulLabel.setFont(Font.font("Arial", FontWeight.NORMAL, 13));
+        foulLabel.setTextFill(Color.WHITE);
+        breakdownGrid.add(foulIcon, 2, row);
+        breakdownGrid.add(foulLabel, 3, row++);
+        
+        // Store labels for updates
+        if (isRed) {
+            redClassifiedLabel = classifiedLabel;
+            redOverflowLabel = overflowLabel;
+            redMotifLabel = motifLabel;
+            redLeaveLabel = leaveLabel;
+            redFoulLabel = foulLabel;
+            redMotifDisplayLabel = motifDisplayLabel;
+        } else {
+            blueClassifiedLabel = classifiedLabel;
+            blueOverflowLabel = overflowLabel;
+            blueMotifLabel = motifLabel;
+            blueLeaveLabel = leaveLabel;
+            blueFoulLabel = foulLabel;
+            blueMotifDisplayLabel = motifDisplayLabel;
+        }
+        
+        box.getChildren().addAll(teamLabel, headerBox, breakdownGrid);
+        
+        return box;
     }
     
     private VBox createScoreBox(String allianceName, Color color) {
@@ -177,11 +304,70 @@ public class StreamOutputWindow {
         redScoreLabel.setText(String.valueOf(match.getRedTotalScore()));
         blueScoreLabel.setText(String.valueOf(match.getBlueTotalScore()));
         timerLabel.setText(matchTimer.getTimeString());
-        phaseLabel.setText(matchTimer.currentPhaseProperty().get());
+        
+        String phase = matchTimer.currentPhaseProperty().get();
+        phaseLabel.setText(phase);
+        
+        // Change phase color based on state
+        if (phase.equals("ENDGAME")) {
+            phaseLabel.setTextFill(Color.ORANGE);
+        } else if (phase.equals("FINISHED")) {
+            phaseLabel.setTextFill(Color.RED);
+        } else if (phase.equals("UNDER REVIEW")) {
+            phaseLabel.setTextFill(Color.YELLOW);
+        } else {
+            phaseLabel.setTextFill(Color.LIGHTGREEN);
+        }
         
         String redTeam = match.getRedTeamNumber().isEmpty() ? "----" : match.getRedTeamNumber();
         String blueTeam = match.getBlueTeamNumber().isEmpty() ? "----" : match.getBlueTeamNumber();
         teamNumbersLabel.setText("Red: " + redTeam + " vs Blue: " + blueTeam);
+        
+        // Update detailed breakdown
+        updateDetailedBreakdown();
+    }
+    
+    private void updateDetailedBreakdown() {
+        // Current Motif
+        String motifText = match.getRedScore().getMotif().name();
+        
+        // Red Alliance breakdown
+        int redClassified = match.getRedScore().getAutoClassified() + match.getRedScore().getTeleopClassified();
+        int redOverflow = match.getRedScore().getAutoOverflow() + match.getRedScore().getTeleopOverflow();
+        int redPattern = match.getRedScore().getAutoPatternMatches() + match.getRedScore().getTeleopPatternMatches();
+        int redLeave = (match.getRedScore().isRobot1Leave() ? 1 : 0) + (match.getRedScore().isRobot2Leave() ? 1 : 0);
+        
+        // Opponent fouls give points to this alliance
+        int redFoulPoints = match.getBlueScore().getMajorFouls() * 15 + match.getBlueScore().getMinorFouls() * 5;
+        
+        redClassifiedLabel.setText("Classified: " + redClassified + " (" + (redClassified * 3) + " pts)");
+        redOverflowLabel.setText("Overflow: " + redOverflow + " (" + redOverflow + " pts)");
+        redMotifLabel.setText("Pattern: " + redPattern + " (" + (redPattern * 2) + " pts)");
+        redLeaveLabel.setText("Leave: " + redLeave + " (" + (redLeave * 3) + " pts)");
+        redFoulLabel.setText("Opp. Fouls: " + redFoulPoints + " pts");
+        redMotifDisplayLabel.setText("Motif: " + motifText);
+        
+        String redTeam = match.getRedTeamNumber().isEmpty() ? "----" : match.getRedTeamNumber();
+        redTeamLabel.setText("Team: " + redTeam);
+        
+        // Blue Alliance breakdown
+        int blueClassified = match.getBlueScore().getAutoClassified() + match.getBlueScore().getTeleopClassified();
+        int blueOverflow = match.getBlueScore().getAutoOverflow() + match.getBlueScore().getTeleopOverflow();
+        int bluePattern = match.getBlueScore().getAutoPatternMatches() + match.getBlueScore().getTeleopPatternMatches();
+        int blueLeave = (match.getBlueScore().isRobot1Leave() ? 1 : 0) + (match.getBlueScore().isRobot2Leave() ? 1 : 0);
+        
+        // Opponent fouls give points to this alliance
+        int blueFoulPoints = match.getRedScore().getMajorFouls() * 15 + match.getRedScore().getMinorFouls() * 5;
+        
+        blueClassifiedLabel.setText("Classified: " + blueClassified + " (" + (blueClassified * 3) + " pts)");
+        blueOverflowLabel.setText("Overflow: " + blueOverflow + " (" + blueOverflow + " pts)");
+        blueMotifLabel.setText("Pattern: " + bluePattern + " (" + (bluePattern * 2) + " pts)");
+        blueLeaveLabel.setText("Leave: " + blueLeave + " (" + (blueLeave * 3) + " pts)");
+        blueFoulLabel.setText("Opp. Fouls: " + blueFoulPoints + " pts");
+        blueMotifDisplayLabel.setText("Motif: " + motifText);
+        
+        String blueTeam = match.getBlueTeamNumber().isEmpty() ? "----" : match.getBlueTeamNumber();
+        blueTeamLabel.setText("Team: " + blueTeam);
     }
     
     public void updateWebcamFrame(Image frame) {
@@ -246,6 +432,195 @@ public class StreamOutputWindow {
         // Show normal elements
         topBar.setVisible(true);
         scoreBar.setVisible(true);
+    }
+    
+    /**
+     * Show detailed breakdown overlay for final results
+     */
+    public void showBreakdownOverlay() {
+        if (showingBreakdown) {
+            return; // Already showing
+        }
+        
+        showingBreakdown = true;
+        
+        // Create breakdown overlay
+        VBox overlay = new VBox(30);
+        overlay.setAlignment(Pos.CENTER);
+        overlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.95);");
+        overlay.setPadding(new Insets(40));
+        
+        // Title
+        Label titleLabel = new Label("FINAL SCORE BREAKDOWN");
+        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 48));
+        titleLabel.setTextFill(Color.WHITE);
+        
+        // Match info
+        String motif = match.getRedScore().getMotif().getDisplayName();
+        Label motifLabel = new Label("MOTIF: " + motif);
+        motifLabel.setFont(Font.font("Arial", FontWeight.BOLD, 24));
+        motifLabel.setTextFill(Color.YELLOW);
+        
+        // Scores side by side
+        HBox scoresBox = new HBox(60);
+        scoresBox.setAlignment(Pos.CENTER);
+        
+        VBox redBreakdown = createFullBreakdownBox("RED ALLIANCE", match.getRedScore(), 
+                                                     match.getBlueScore(), match.getRedTeamNumber(),
+                                                     match.getRedTotalScore(), Color.rgb(211, 47, 47));
+        VBox blueBreakdown = createFullBreakdownBox("BLUE ALLIANCE", match.getBlueScore(),
+                                                      match.getRedScore(), match.getBlueTeamNumber(),
+                                                      match.getBlueTotalScore(), Color.rgb(25, 118, 210));
+        
+        scoresBox.getChildren().addAll(redBreakdown, blueBreakdown);
+        
+        // Winner
+        Label winnerLabel = new Label();
+        winnerLabel.setFont(Font.font("Arial", FontWeight.BOLD, 36));
+        int redTotal = match.getRedTotalScore();
+        int blueTotal = match.getBlueTotalScore();
+        if (redTotal > blueTotal) {
+            winnerLabel.setText("🏆 RED ALLIANCE WINS! 🏆");
+            winnerLabel.setTextFill(Color.rgb(255, 100, 100));
+        } else if (blueTotal > redTotal) {
+            winnerLabel.setText("🏆 BLUE ALLIANCE WINS! 🏆");
+            winnerLabel.setTextFill(Color.rgb(100, 150, 255));
+        } else {
+            winnerLabel.setText("🤝 TIE MATCH! 🤝");
+            winnerLabel.setTextFill(Color.WHITE);
+        }
+        
+        overlay.getChildren().addAll(titleLabel, motifLabel, scoresBox, winnerLabel);
+        
+        breakdownOverlay = overlay;
+        root.getChildren().add(overlay);
+    }
+    
+    /**
+     * Hide the breakdown overlay
+     */
+    public void hideBreakdownOverlay() {
+        if (showingBreakdown && breakdownOverlay != null) {
+            root.getChildren().remove(breakdownOverlay);
+            breakdownOverlay = null;
+            showingBreakdown = false;
+        }
+    }
+    
+    private VBox createFullBreakdownBox(String title, org.ftc.scorer.model.DecodeScore score,
+                                         org.ftc.scorer.model.DecodeScore opponentScore,
+                                         String teamNumber, int totalScore, Color color) {
+        VBox box = new VBox(10);
+        box.setAlignment(Pos.CENTER_LEFT);
+        box.setPadding(new Insets(20));
+        box.setStyle("-fx-background-color: rgba(0, 0, 0, 0.5); -fx-border-color: " + 
+                     toRgbString(color) + "; -fx-border-width: 3; -fx-border-radius: 10; -fx-background-radius: 10;");
+        box.setMinWidth(400);
+        
+        Label titleLabel = new Label(title);
+        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 28));
+        titleLabel.setTextFill(color);
+        
+        String team = teamNumber.isEmpty() ? "----" : teamNumber;
+        Label teamLabel = new Label("Team: " + team);
+        teamLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+        teamLabel.setTextFill(Color.WHITE);
+        
+        // Autonomous
+        Label autoHeader = new Label("AUTONOMOUS:");
+        autoHeader.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        autoHeader.setTextFill(Color.LIGHTBLUE);
+        
+        String leaveText = "";
+        if (score.isRobot1Leave()) leaveText += "Robot 1 ";
+        if (score.isRobot2Leave()) leaveText += "Robot 2 ";
+        if (leaveText.isEmpty()) leaveText = "None";
+        
+        VBox autoBox = new VBox(3);
+        autoBox.getChildren().addAll(
+            createBreakdownLine("Leave: " + leaveText, 
+                               (score.isRobot1Leave() ? 3 : 0) + (score.isRobot2Leave() ? 3 : 0)),
+            createBreakdownLine("Classified: " + score.getAutoClassified(), score.getAutoClassified() * 3),
+            createBreakdownLine("Overflow: " + score.getAutoOverflow(), score.getAutoOverflow()),
+            createBreakdownLine("Pattern: " + score.getAutoPatternMatches(), score.getAutoPatternMatches() * 2)
+        );
+        
+        // TeleOp
+        Label teleopHeader = new Label("TELEOP:");
+        teleopHeader.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        teleopHeader.setTextFill(Color.LIGHTGREEN);
+        
+        VBox teleopBox = new VBox(3);
+        teleopBox.getChildren().addAll(
+            createBreakdownLine("Classified: " + score.getTeleopClassified(), score.getTeleopClassified() * 3),
+            createBreakdownLine("Overflow: " + score.getTeleopOverflow(), score.getTeleopOverflow()),
+            createBreakdownLine("Depot: " + score.getTeleopDepot(), score.getTeleopDepot()),
+            createBreakdownLine("Pattern: " + score.getTeleopPatternMatches(), score.getTeleopPatternMatches() * 2)
+        );
+        
+        // Base Return
+        Label baseHeader = new Label("BASE RETURN:");
+        baseHeader.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        baseHeader.setTextFill(Color.ORANGE);
+        
+        VBox baseBox = new VBox(3);
+        baseBox.getChildren().addAll(
+            createBreakdownLine("Robot 1: " + score.getRobot1Base().getDisplayName(), 0),
+            createBreakdownLine("Robot 2: " + score.getRobot2Base().getDisplayName(), 0),
+            createBreakdownLine("Movement Points", score.getMovementPoints())
+        );
+        
+        // Penalties
+        int foulPoints = opponentScore.getMajorFouls() * 15 + opponentScore.getMinorFouls() * 5;
+        Label penaltyHeader = new Label("PENALTIES (from opponent):");
+        penaltyHeader.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        penaltyHeader.setTextFill(Color.YELLOW);
+        
+        VBox penaltyBox = new VBox(3);
+        penaltyBox.getChildren().addAll(
+            createBreakdownLine("Major Fouls: " + opponentScore.getMajorFouls(), opponentScore.getMajorFouls() * 15),
+            createBreakdownLine("Minor Fouls: " + opponentScore.getMinorFouls(), opponentScore.getMinorFouls() * 5)
+        );
+        
+        // Total
+        Label totalLabel = new Label("TOTAL: " + totalScore + " points");
+        totalLabel.setFont(Font.font("Arial", FontWeight.BOLD, 32));
+        totalLabel.setTextFill(Color.WHITE);
+        
+        box.getChildren().addAll(titleLabel, teamLabel, new Separator(),
+                                  autoHeader, autoBox, new Separator(),
+                                  teleopHeader, teleopBox, new Separator(),
+                                  baseHeader, baseBox, new Separator(),
+                                  penaltyHeader, penaltyBox, new Separator(),
+                                  totalLabel);
+        
+        return box;
+    }
+    
+    private HBox createBreakdownLine(String label, int points) {
+        HBox line = new HBox(10);
+        line.setAlignment(Pos.CENTER_LEFT);
+        
+        Label labelText = new Label(label);
+        labelText.setFont(Font.font("Arial", FontWeight.NORMAL, 14));
+        labelText.setTextFill(Color.WHITE);
+        
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        
+        Label pointsText = new Label(points + " pts");
+        pointsText.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        pointsText.setTextFill(Color.LIGHTGRAY);
+        
+        line.getChildren().addAll(labelText, spacer, pointsText);
+        return line;
+    }
+    
+    private String toRgbString(Color color) {
+        return String.format("rgb(%d, %d, %d)",
+            (int)(color.getRed() * 255),
+            (int)(color.getGreen() * 255),
+            (int)(color.getBlue() * 255));
     }
     
     public void show() {

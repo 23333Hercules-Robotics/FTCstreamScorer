@@ -48,8 +48,10 @@ public class ControlWindow {
     private Spinner<Integer> blueMajorFouls, blueMinorFouls;
     
     // Match controls
-    private Button startButton, pauseButton, resetButton;
+    private Button startButton, pauseButton, resetButton, showBreakdownButton;
     private ComboBox<String> webcamSelector;
+    private CheckBox soloModeCheckBox;
+    private Button countdownButton;
     
     public ControlWindow(Match match, MatchTimer matchTimer, WebcamService webcamService, StreamOutputWindow streamWindow, org.ftc.scorer.service.AudioService audioService) {
         this.match = match;
@@ -172,16 +174,38 @@ public class ControlWindow {
         Button showStreamButton = new Button("Show Stream Window");
         showStreamButton.setOnAction(e -> streamWindow.show());
         
-        Button showBreakdownButton = new Button("📊 Score Breakdown");
+        showBreakdownButton = new Button("📊 Show Breakdown on Stream");
         showBreakdownButton.setStyle("-fx-background-color: #9C27B0; -fx-text-fill: white;");
-        showBreakdownButton.setOnAction(e -> showScoreBreakdown());
+        showBreakdownButton.setDisable(true); // Disabled until match finishes
+        showBreakdownButton.setOnAction(e -> {
+            streamWindow.showBreakdownOverlay();
+            audioService.playResults();
+            match.setState(Match.MatchState.FINISHED);
+        });
+        
+        // Solo Mode checkbox
+        soloModeCheckBox = new CheckBox("Solo Mode");
+        soloModeCheckBox.setStyle("-fx-font-weight: bold; -fx-font-size: 14;");
+        soloModeCheckBox.setSelected(false);
+        soloModeCheckBox.setOnAction(e -> {
+            boolean soloMode = soloModeCheckBox.isSelected();
+            match.setMatchType(soloMode ? Match.MatchType.SINGLE_TEAM_DEMO : Match.MatchType.TRADITIONAL_MATCH);
+            updateSoloModeUI(soloMode);
+        });
+        
+        // Stream Countdown button
+        countdownButton = new Button("🎬 Show Stream Countdown");
+        countdownButton.setStyle("-fx-background-color: #FF5722; -fx-text-fill: white; -fx-font-weight: bold;");
+        countdownButton.setOnAction(e -> showStreamCountdown());
         
         controls.getChildren().addAll(
             redTeamLabel, redTeamField,
             blueTeamLabel, blueTeamField,
             motifLabel, motifSelector, randomizeMotifButton,
             webcamLabel, webcamSelector,
-            startButton, pauseButton, resetButton, showStreamButton, showBreakdownButton
+            soloModeCheckBox,
+            startButton, pauseButton, resetButton, 
+            countdownButton, showStreamButton, showBreakdownButton
         );
         
         box.getChildren().addAll(title, controls);
@@ -362,6 +386,16 @@ public class ControlWindow {
     }
     
     private void bindToModel() {
+        // Monitor match state to enable breakdown button
+        matchTimer.currentPhaseProperty().addListener((obs, oldVal, newVal) -> {
+            if ("UNDER REVIEW".equals(newVal)) {
+                showBreakdownButton.setDisable(false);
+            } else if ("NOT_STARTED".equals(newVal) || "AUTO".equals(newVal)) {
+                showBreakdownButton.setDisable(true);
+                streamWindow.hideBreakdownOverlay();
+            }
+        });
+        
         // Red Alliance bindings
         redRobot1Leave.selectedProperty().addListener((obs, old, newVal) -> {
             match.getRedScore().setRobot1Leave(newVal);
@@ -520,6 +554,58 @@ public class ControlWindow {
         motifSelector.setValue(DecodeScore.MotifType.PPG);
         
         updateScoreDisplays();
+    }
+    
+    /**
+     * Update UI for solo mode
+     */
+    private void updateSoloModeUI(boolean soloMode) {
+        if (soloMode) {
+            // In solo mode, hide blue alliance or indicate it's not used
+            blueTeamField.setDisable(true);
+            blueTeamField.setText("N/A");
+            blueTeamField.setPromptText("Solo Mode");
+        } else {
+            // Normal mode
+            blueTeamField.setDisable(false);
+            blueTeamField.setText("");
+            blueTeamField.setPromptText("0000");
+        }
+    }
+    
+    /**
+     * Show stream countdown
+     */
+    private void showStreamCountdown() {
+        // Show a 5-second countdown on stream
+        new Thread(() -> {
+            for (int i = 5; i >= 1; i--) {
+                final int count = i;
+                javafx.application.Platform.runLater(() -> {
+                    String redTeam = match.getRedTeamNumber().isEmpty() ? "----" : match.getRedTeamNumber();
+                    String blueTeam = match.getBlueTeamNumber().isEmpty() ? "----" : match.getBlueTeamNumber();
+                    String matchType = match.isSingleTeamMode() ? "Solo Demo Mode" : "2v2 Alliance Match";
+                    String motif = "MOTIF: " + match.getRedScore().getMotif().getDisplayName();
+                    
+                    String teamInfo = match.isSingleTeamMode() ? 
+                        "Red Alliance: Team " + redTeam :
+                        "Red: " + redTeam + " vs Blue: " + blueTeam;
+                    
+                    streamWindow.showSplashScreen(String.valueOf(count), teamInfo, matchType, motif);
+                });
+                
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            
+            // Hide splash and start match
+            javafx.application.Platform.runLater(() -> {
+                streamWindow.hideSplashScreen();
+            });
+        }).start();
     }
     
     /**
