@@ -5,6 +5,7 @@ import java.util.List;
 
 /**
  * DECODE game scoring model for FTC 2025-2026 season
+ * Supports both Traditional Match (2v2) and Single Team Demo modes
  */
 public class DecodeScore {
     // Auto scoring

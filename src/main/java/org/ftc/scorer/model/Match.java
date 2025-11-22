@@ -8,10 +8,16 @@ public class Match {
     private DecodeScore redScore;
     private DecodeScore blueScore;
     private MatchState state;
+    private MatchType matchType;
     private long startTime;
     
     public Match(String matchNumber) {
+        this(matchNumber, MatchType.TRADITIONAL_MATCH);
+    }
+    
+    public Match(String matchNumber, MatchType matchType) {
         this.matchNumber = matchNumber;
+        this.matchType = matchType;
         this.redScore = new DecodeScore();
         this.blueScore = new DecodeScore();
         this.state = MatchState.NOT_STARTED;
@@ -50,6 +56,18 @@ public class Match {
         this.startTime = startTime;
     }
     
+    public MatchType getMatchType() {
+        return matchType;
+    }
+    
+    public void setMatchType(MatchType matchType) {
+        this.matchType = matchType;
+    }
+    
+    public boolean isSingleTeamMode() {
+        return matchType == MatchType.SINGLE_TEAM_DEMO;
+    }
+    
     public void reset() {
         redScore.reset();
         blueScore.reset();
@@ -63,5 +81,10 @@ public class Match {
         TELEOP,
         END_GAME,
         FINISHED
+    }
+    
+    public enum MatchType {
+        TRADITIONAL_MATCH,  // 2v2 alliance match (Red vs Blue)
+        SINGLE_TEAM_DEMO    // Single team demonstration/practice mode
     }
 }
