@@ -35,8 +35,8 @@ public class StreamOutputWindow {
     private Label teamNumbersLabel;
     
     // Breakdown labels for detailed scoring
-    private Label redClassifiedLabel, redOverflowLabel, redMotifLabel, redLeaveLabel, redFoulLabel, redMotifDisplayLabel;
-    private Label blueClassifiedLabel, blueOverflowLabel, blueMotifLabel, blueLeaveLabel, blueFoulLabel, blueMotifDisplayLabel;
+    private Label redClassifiedLabel, redOverflowLabel, redMotifLabel, redLeaveLabel;
+    private Label blueClassifiedLabel, blueOverflowLabel, blueMotifLabel, blueLeaveLabel;
     private Label redTeamLabel, blueTeamLabel;
     
     private StackPane root;
@@ -188,13 +188,6 @@ public class StreamOutputWindow {
         VBox totalBox = createTotalScoreBox("0", Color.rgb(211, 47, 47));
         redScoreLabel = (Label) ((VBox)totalBox.getChildren().get(0)).getChildren().get(0);
         
-        // Fouls display
-        VBox foulBox = createInfoBox("⚠️", "0", Color.rgb(211, 47, 47), 60);
-        redFoulLabel = (Label) ((VBox)foulBox.getChildren().get(0)).getChildren().get(1);
-        
-        // Motif display (hidden for now)
-        redMotifDisplayLabel = new Label("");
-        
         section.getChildren().addAll(teamBox, leaveBox, patternBox, overflowBox, classifiedBox, totalBox);
         
         return section;
@@ -232,13 +225,6 @@ public class StreamOutputWindow {
         // Team info (rightmost)
         VBox teamBox = createInfoBox("BLUE", "----", Color.rgb(25, 118, 210), 80);
         blueTeamLabel = (Label) ((VBox)teamBox.getChildren().get(0)).getChildren().get(1);
-        
-        // Fouls display
-        VBox foulBox = createInfoBox("⚠️", "0", Color.rgb(25, 118, 210), 60);
-        blueFoulLabel = (Label) ((VBox)foulBox.getChildren().get(0)).getChildren().get(1);
-        
-        // Motif display (hidden for now)
-        blueMotifDisplayLabel = new Label("");
         
         section.getChildren().addAll(totalBox, classifiedBox, overflowBox, patternBox, leaveBox, teamBox);
         
