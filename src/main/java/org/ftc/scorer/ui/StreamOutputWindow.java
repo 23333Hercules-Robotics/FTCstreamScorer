@@ -32,12 +32,34 @@ public class StreamOutputWindow {
     private Label blueScoreLabel;
     private Label timerLabel;
     private Label phaseLabel;
-    private Label teamNumbersLabel;
+    private Label teamNumbersLabel;  // Deprecated - kept for compatibility
     
     // Breakdown labels for detailed scoring
     private Label redClassifiedLabel, redOverflowLabel, redMotifLabel, redLeaveLabel, redBaseLabel, redFoulLabel;
     private Label blueClassifiedLabel, blueOverflowLabel, blueMotifLabel, blueLeaveLabel, blueBaseLabel, blueFoulLabel;
     private Label redTeamLabel, blueTeamLabel;
+    
+    // Helper class to return box and label together
+    private static class LabeledBox {
+        VBox box;
+        Label label;
+        LabeledBox(VBox box, Label label) {
+            this.box = box;
+            this.label = label;
+        }
+    }
+    
+    // Helper class for stacked boxes with two labels
+    private static class StackedLabeledBox {
+        VBox box;
+        Label topLabel;
+        Label bottomLabel;
+        StackedLabeledBox(VBox box, Label topLabel, Label bottomLabel) {
+            this.box = box;
+            this.topLabel = topLabel;
+            this.bottomLabel = bottomLabel;
+        }
+    }
     
     private StackPane root;
     private HBox topBar;
@@ -187,32 +209,28 @@ public class StreamOutputWindow {
         teamBox.getChildren().addAll(redLabel, redTeamLabel);
         
         // Fouls (opponent's fouls give us points)
-        VBox foulsBox = createInfoBox("foul_icon", "0", redColor, 70);
-        redFoulLabel = (Label) ((VBox)foulsBox.getChildren().get(0)).getChildren().get(1);
+        LabeledBox foulsBox = createInfoBox("foul_icon", "0", redColor, 70);
+        redFoulLabel = foulsBox.label;
         
         // Pattern points
-        VBox patternBox = createInfoBox("pattern_icon", "0", redColor, 60);
-        redMotifLabel = (Label) ((VBox)patternBox.getChildren().get(0)).getChildren().get(1);
+        LabeledBox patternBox = createInfoBox("pattern_icon", "0", redColor, 60);
+        redMotifLabel = patternBox.label;
         
         // Leave + Base (stacked)
-        VBox leaveBaseBox = createStackedInfoBox("leave_icon", "0", "base_icon", "0", redColor, 70);
-        VBox leaveSection = (VBox) leaveBaseBox.getChildren().get(0);
-        VBox baseSection = (VBox) leaveBaseBox.getChildren().get(2);
-        redLeaveLabel = (Label) leaveSection.getChildren().get(1);
-        redBaseLabel = (Label) baseSection.getChildren().get(1);
+        StackedLabeledBox leaveBaseBox = createStackedInfoBox("leave_icon", "0", "base_icon", "0", redColor, 70);
+        redLeaveLabel = leaveBaseBox.topLabel;
+        redBaseLabel = leaveBaseBox.bottomLabel;
         
         // Classified + Overflow (stacked)
-        VBox classifiedOverflowBox = createStackedInfoBox("classified_icon", "0", "overflow_icon", "0", redColor, 70);
-        VBox classifiedSection = (VBox) classifiedOverflowBox.getChildren().get(0);
-        VBox overflowSection = (VBox) classifiedOverflowBox.getChildren().get(2);
-        redClassifiedLabel = (Label) classifiedSection.getChildren().get(1);
-        redOverflowLabel = (Label) overflowSection.getChildren().get(1);
+        StackedLabeledBox classifiedOverflowBox = createStackedInfoBox("classified_icon", "0", "overflow_icon", "0", redColor, 70);
+        redClassifiedLabel = classifiedOverflowBox.topLabel;
+        redOverflowLabel = classifiedOverflowBox.bottomLabel;
         
         // Total score (rightmost, closest to center)
-        VBox totalBox = createTotalScoreBox("0", redColor);
-        redScoreLabel = (Label) ((VBox)totalBox.getChildren().get(0)).getChildren().get(0);
+        LabeledBox totalBox = createTotalScoreBox("0", redColor);
+        redScoreLabel = totalBox.label;
         
-        section.getChildren().addAll(teamBox, foulsBox, patternBox, leaveBaseBox, classifiedOverflowBox, totalBox);
+        section.getChildren().addAll(teamBox, foulsBox.box, patternBox.box, leaveBaseBox.box, classifiedOverflowBox.box, totalBox.box);
         
         return section;
     }
@@ -232,30 +250,26 @@ public class StreamOutputWindow {
         Color blueColor = Color.rgb(25, 118, 210);
         
         // Total score (leftmost, closest to center)
-        VBox totalBox = createTotalScoreBox("0", blueColor);
-        blueScoreLabel = (Label) ((VBox)totalBox.getChildren().get(0)).getChildren().get(0);
+        LabeledBox totalBox = createTotalScoreBox("0", blueColor);
+        blueScoreLabel = totalBox.label;
         
         // Classified + Overflow (stacked)
-        VBox classifiedOverflowBox = createStackedInfoBox("classified_icon", "0", "overflow_icon", "0", blueColor, 70);
-        VBox blueClassifiedSection = (VBox) classifiedOverflowBox.getChildren().get(0);
-        VBox blueOverflowSection = (VBox) classifiedOverflowBox.getChildren().get(2);
-        blueClassifiedLabel = (Label) blueClassifiedSection.getChildren().get(1);
-        blueOverflowLabel = (Label) blueOverflowSection.getChildren().get(1);
+        StackedLabeledBox classifiedOverflowBox = createStackedInfoBox("classified_icon", "0", "overflow_icon", "0", blueColor, 70);
+        blueClassifiedLabel = classifiedOverflowBox.topLabel;
+        blueOverflowLabel = classifiedOverflowBox.bottomLabel;
         
         // Leave + Base (stacked)
-        VBox leaveBaseBox = createStackedInfoBox("leave_icon", "0", "base_icon", "0", blueColor, 70);
-        VBox blueLeaveSection = (VBox) leaveBaseBox.getChildren().get(0);
-        VBox blueBaseSection = (VBox) leaveBaseBox.getChildren().get(2);
-        blueLeaveLabel = (Label) blueLeaveSection.getChildren().get(1);
-        blueBaseLabel = (Label) blueBaseSection.getChildren().get(1);
+        StackedLabeledBox leaveBaseBox = createStackedInfoBox("leave_icon", "0", "base_icon", "0", blueColor, 70);
+        blueLeaveLabel = leaveBaseBox.topLabel;
+        blueBaseLabel = leaveBaseBox.bottomLabel;
         
         // Pattern points
-        VBox patternBox = createInfoBox("pattern_icon", "0", blueColor, 60);
-        blueMotifLabel = (Label) ((VBox)patternBox.getChildren().get(0)).getChildren().get(1);
+        LabeledBox patternBox = createInfoBox("pattern_icon", "0", blueColor, 60);
+        blueMotifLabel = patternBox.label;
         
         // Fouls (opponent's fouls give us points)
-        VBox foulsBox = createInfoBox("foul_icon", "0", blueColor, 70);
-        blueFoulLabel = (Label) ((VBox)foulsBox.getChildren().get(0)).getChildren().get(1);
+        LabeledBox foulsBox = createInfoBox("foul_icon", "0", blueColor, 70);
+        blueFoulLabel = foulsBox.label;
         
         // Team info (rightmost) - using text label for team name
         VBox teamBox = new VBox(2);
@@ -275,7 +289,7 @@ public class StreamOutputWindow {
         
         teamBox.getChildren().addAll(blueLabel, blueTeamLabel);
         
-        section.getChildren().addAll(totalBox, classifiedOverflowBox, leaveBaseBox, patternBox, foulsBox, teamBox);
+        section.getChildren().addAll(totalBox.box, classifiedOverflowBox.box, leaveBaseBox.box, patternBox.box, foulsBox.box, teamBox);
         
         return section;
     }
@@ -314,8 +328,9 @@ public class StreamOutputWindow {
     
     /**
      * Create a small white info box with icon and value
+     * Returns a LabeledBox with both the box and the label for easy access
      */
-    private VBox createInfoBox(String iconName, String value, Color color, int width) {
+    private LabeledBox createInfoBox(String iconName, String value, Color color, int width) {
         VBox box = new VBox(2);
         box.setAlignment(Pos.CENTER);
         box.setPadding(new Insets(8, 10, 8, 10));
@@ -336,13 +351,14 @@ public class StreamOutputWindow {
         content.getChildren().addAll(icon, valueText);
         box.getChildren().add(content);
         
-        return box;
+        return new LabeledBox(box, valueText);
     }
     
     /**
      * Create a stacked info box with two categories (icon images)
+     * Returns a StackedLabeledBox with the box and both labels for easy access
      */
-    private VBox createStackedInfoBox(String iconName1, String value1, String iconName2, String value2, Color color, int width) {
+    private StackedLabeledBox createStackedInfoBox(String iconName1, String value1, String iconName2, String value2, Color color, int width) {
         VBox box = new VBox(0);
         box.setAlignment(Pos.CENTER);
         box.setStyle("-fx-border-color: " + toRgbString(color) + "; -fx-border-width: 2;");
@@ -384,13 +400,14 @@ public class StreamOutputWindow {
         
         box.getChildren().addAll(topSection, separator, bottomSection);
         
-        return box;
+        return new StackedLabeledBox(box, topValue, bottomValue);
     }
     
     /**
      * Create total score box (larger)
+     * Returns a LabeledBox with both the box and the label for easy access
      */
-    private VBox createTotalScoreBox(String value, Color color) {
+    private LabeledBox createTotalScoreBox(String value, Color color) {
         VBox box = new VBox(2);
         box.setAlignment(Pos.CENTER);
         box.setPadding(new Insets(8, 15, 8, 15));
@@ -407,7 +424,7 @@ public class StreamOutputWindow {
         content.getChildren().add(valueText);
         box.getChildren().add(content);
         
-        return box;
+        return new LabeledBox(box, valueText);
     }
     
     private HBox createTopBar() {
@@ -513,13 +530,7 @@ public class StreamOutputWindow {
         String motifText = match.getRedScore().getMotif().name();
         motifLabel.setText(motifText);
         
-        String redTeam = match.getRedTeamsDisplay();
-        String blueTeam = match.getBlueTeamsDisplay();
-        if (match.isSingleTeamMode()) {
-            teamNumbersLabel.setText("Red Alliance: " + redTeam + " (Solo Mode)");
-        } else {
-            teamNumbersLabel.setText("Red: " + redTeam + " vs Blue: " + blueTeam);
-        }
+        // Note: teamNumbersLabel is deprecated and hidden - team numbers are now shown in the bottom bar
         
         // Update detailed breakdown
         updateDetailedBreakdown();
