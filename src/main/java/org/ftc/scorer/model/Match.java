@@ -73,21 +73,33 @@ public class Match {
     }
     
     // Legacy methods for compatibility (deprecated)
+    /**
+     * @deprecated Use getRedTeamsDisplay() instead. Will be removed in v2.0.0.
+     */
     @Deprecated
     public String getRedTeamNumber() {
         return getRedTeamsDisplay();
     }
     
+    /**
+     * @deprecated Use setRedTeam1Number() instead. Will be removed in v2.0.0.
+     */
     @Deprecated
     public void setRedTeamNumber(String redTeamNumber) {
         this.redTeam1Number = redTeamNumber;
     }
     
+    /**
+     * @deprecated Use getBlueTeamsDisplay() instead. Will be removed in v2.0.0.
+     */
     @Deprecated
     public String getBlueTeamNumber() {
         return getBlueTeamsDisplay();
     }
     
+    /**
+     * @deprecated Use setBlueTeam1Number() instead. Will be removed in v2.0.0.
+     */
     @Deprecated
     public void setBlueTeamNumber(String blueTeamNumber) {
         this.blueTeam1Number = blueTeamNumber;

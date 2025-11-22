@@ -677,37 +677,39 @@ public class ControlWindow {
     
     /**
      * Show stream countdown - Easy to activate with prominent button
+     * Uses JavaFX Timeline for proper thread management
      */
     private void showStreamCountdown() {
-        // Show a 5-second countdown on stream
-        new Thread(() -> {
-            for (int i = 5; i >= 1; i--) {
-                final int count = i;
-                javafx.application.Platform.runLater(() -> {
-                    String redTeam = match.getRedTeamsDisplay();
-                    String blueTeam = match.getBlueTeamsDisplay();
-                    String matchType = match.isSingleTeamMode() ? "Solo Demo Mode" : "2v2 Alliance Match";
-                    String motif = "MOTIF: " + match.getRedScore().getMotif().getDisplayName();
-                    
-                    String teamInfo = match.isSingleTeamMode() ? 
-                        "Red Alliance: " + redTeam :
-                        "Red: " + redTeam + " vs Blue: " + blueTeam;
-                    
-                    streamWindow.showSplashScreen(String.valueOf(count), teamInfo, matchType, motif);
-                });
-                
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            
-            // Hide splash and start match
-            javafx.application.Platform.runLater(() -> {
-                streamWindow.hideSplashScreen();
-            });
-        }).start();
+        // Prepare team information
+        String redTeam = match.getRedTeamsDisplay();
+        String blueTeam = match.getBlueTeamsDisplay();
+        String matchType = match.isSingleTeamMode() ? "Solo Demo Mode" : "2v2 Alliance Match";
+        String motif = "MOTIF: " + match.getRedScore().getMotif().getDisplayName();
+        String teamInfo = match.isSingleTeamMode() ? 
+            "Red Alliance: " + redTeam :
+            "Red: " + redTeam + " vs Blue: " + blueTeam;
+        
+        // Use Timeline for countdown (JavaFX-safe)
+        javafx.animation.Timeline countdownTimeline = new javafx.animation.Timeline();
+        for (int i = 5; i >= 1; i--) {
+            final int count = i;
+            countdownTimeline.getKeyFrames().add(
+                new javafx.animation.KeyFrame(
+                    javafx.util.Duration.seconds(5 - i),
+                    e -> streamWindow.showSplashScreen(String.valueOf(count), teamInfo, matchType, motif)
+                )
+            );
+        }
+        
+        // Hide splash after countdown completes
+        countdownTimeline.getKeyFrames().add(
+            new javafx.animation.KeyFrame(
+                javafx.util.Duration.seconds(5),
+                e -> streamWindow.hideSplashScreen()
+            )
+        );
+        
+        countdownTimeline.play();
     }
     
     /**

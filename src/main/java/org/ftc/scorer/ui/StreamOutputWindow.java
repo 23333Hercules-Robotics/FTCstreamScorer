@@ -417,14 +417,20 @@ public class StreamOutputWindow {
         
         // Try to load DECODE background image
         try {
-            String backgroundPath = getClass().getResource("/images/decode_bg.svg").toString();
-            ImageView backgroundImage = new ImageView(new Image(backgroundPath));
-            backgroundImage.setPreserveRatio(false);
-            backgroundImage.setFitWidth(1280);
-            backgroundImage.setFitHeight(720);
-            splashOverlay.getChildren().add(backgroundImage);
+            java.net.URL resource = getClass().getResource("/images/decode_bg.svg");
+            if (resource != null) {
+                String backgroundPath = resource.toString();
+                ImageView backgroundImage = new ImageView(new Image(backgroundPath));
+                backgroundImage.setPreserveRatio(false);
+                backgroundImage.setFitWidth(1280);
+                backgroundImage.setFitHeight(720);
+                splashOverlay.getChildren().add(backgroundImage);
+            } else {
+                // Fallback to solid color if image not found
+                splashOverlay.setStyle("-fx-background-color: #1A237E;");
+            }
         } catch (Exception e) {
-            // Fallback to solid color if image not found
+            // Fallback to solid color if image loading fails
             splashOverlay.setStyle("-fx-background-color: #1A237E;");
         }
         
