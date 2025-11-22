@@ -97,17 +97,37 @@ src/main/resources/
 
 ## Building Installers
 
-To create platform-specific installers (requires JDK 14+):
+### Method 1: Using the Build Scripts (Recommended)
 
+The project includes build scripts that create platform-specific installers without code signing:
+
+**Linux/macOS:**
 ```bash
-# Create runtime image
-mvn javafx:jlink
-
-# Create installer (uses jpackage)
-mvn jpackage:jpackage
+./build-installer.sh
 ```
 
-Installers will be created in `target/installer/`
+**Windows:**
+```batch
+build-installer.bat
+```
+
+Requirements:
+- JDK 14+ (for jpackage support)
+- Maven
+
+The installer will be created in `target/installer/`
+
+### Method 2: Simple JAR Distribution
+
+If you don't need a native installer, you can simply distribute the JAR file:
+
+1. Build: `mvn clean package`
+2. Distribute: `target/stream-scorer-1.0.0.jar`
+3. Run: `java -jar stream-scorer-1.0.0.jar`
+
+Or use the provided launcher scripts:
+- **Linux/macOS:** `./run.sh`
+- **Windows:** `run.bat`
 
 ## License
 
