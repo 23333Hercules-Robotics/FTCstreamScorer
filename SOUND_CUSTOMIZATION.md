@@ -55,17 +55,17 @@ Your custom sounds will now be embedded in the JAR file.
 ### 1. countdown.wav
 **When:** 
 - At match start (0:00)
-- 3 seconds before AUTO ends
-- 3 seconds before match ends
+- 8 seconds before AUTO ends (transition warning)
 
-**Typical Content:** "Three... Two... One... Go!" or beep sounds
+**Typical Content:** "Three... Two... One... Go!" or countdown beeps
 
 **Official FTC:** Uses synthesized countdown voice
 
 **Customization Ideas:**
 - Team mascot saying countdown
-- Electronic beeps (3 beeps)
+- Electronic beeps (countdown timer)
 - Sports arena countdown
+- "Starting in 8 seconds!" announcement
 - Silence (if you don't want countdown)
 
 ---
@@ -86,7 +86,7 @@ Your custom sounds will now be embedded in the JAR file.
 ---
 
 ### 3. charge.wav
-**When:** At 2:00 mark (start of End Game period)
+**When:** At 2:10 mark (start of End Game period - last 20 seconds)
 
 **Typical Content:** Energetic sound, "Charge!" voice, or warning beep
 
@@ -95,8 +95,9 @@ Your custom sounds will now be embedded in the JAR file.
 **Customization Ideas:**
 - Team chant
 - Epic music sting
-- "End Game!" announcement
+- "End Game!" or "20 seconds!" announcement
 - Battle charge sound
+- Urgent alarm/siren
 - Silence if you don't want end game notification
 
 ---
@@ -188,17 +189,16 @@ Navigate to `src/main/resources/audio/` and play files directly with:
 
 ```
 Match Timeline:
-0:00  ─── countdown.wav plays (match starts)
+0:00  ─── countdown.wav plays (match START)
       ├── AUTONOMOUS (30 seconds)
-0:27  ─── countdown.wav plays (3 sec warning)
+      │   
+0:22  ─── countdown.wav plays (8 seconds before AUTO ends - transition warning)
 0:30  ─── endauto.wav plays (AUTO ends, TELEOP starts)
       ├── TELEOP (120 seconds total)
       │   
-1:57  ─── countdown.wav plays (3 sec warning for end game)
-2:00  ─── charge.wav plays (END GAME begins - last 30 seconds)
+2:10  ─── charge.wav plays (END GAME begins - last 20 seconds)
       │   
-2:27  ─── countdown.wav plays (3 sec warning)
-2:30  ─── endmatch.wav plays (match ends)
+2:30  ─── endmatch.wav plays (match ENDS)
       │
       └── results.wav plays MANUALLY when breakdown button pressed
 ```
