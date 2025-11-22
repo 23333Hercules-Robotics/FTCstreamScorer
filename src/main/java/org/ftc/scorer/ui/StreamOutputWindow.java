@@ -454,6 +454,23 @@ public class StreamOutputWindow {
         updateDetailedBreakdown();
     }
     
+    /**
+     * Calculate base return points for a score
+     */
+    private int calculateBasePts(org.ftc.scorer.model.DecodeScore score) {
+        int basePts = 0;
+        if (score.getRobot1Base() == org.ftc.scorer.model.DecodeScore.BaseStatus.PARTIALLY_IN_BASE) basePts += 5;
+        if (score.getRobot1Base() == org.ftc.scorer.model.DecodeScore.BaseStatus.FULLY_IN_BASE) basePts += 10;
+        if (score.getRobot2Base() == org.ftc.scorer.model.DecodeScore.BaseStatus.PARTIALLY_IN_BASE) basePts += 5;
+        if (score.getRobot2Base() == org.ftc.scorer.model.DecodeScore.BaseStatus.FULLY_IN_BASE) basePts += 10;
+        // Bonus if both fully in base
+        if (score.getRobot1Base() == org.ftc.scorer.model.DecodeScore.BaseStatus.FULLY_IN_BASE &&
+            score.getRobot2Base() == org.ftc.scorer.model.DecodeScore.BaseStatus.FULLY_IN_BASE) {
+            basePts += 10;
+        }
+        return basePts;
+    }
+    
     private void updateDetailedBreakdown() {
         // Red Alliance breakdown
         int redClassified = match.getRedScore().getAutoClassified() + match.getRedScore().getTeleopClassified();
@@ -462,16 +479,7 @@ public class StreamOutputWindow {
         int redLeave = (match.getRedScore().isRobot1Leave() ? 1 : 0) + (match.getRedScore().isRobot2Leave() ? 1 : 0);
         
         // Calculate base points
-        int redBasePts = 0;
-        if (match.getRedScore().getRobot1Base() == org.ftc.scorer.model.DecodeScore.BaseStatus.PARTIALLY_IN_BASE) redBasePts += 5;
-        if (match.getRedScore().getRobot1Base() == org.ftc.scorer.model.DecodeScore.BaseStatus.FULLY_IN_BASE) redBasePts += 10;
-        if (match.getRedScore().getRobot2Base() == org.ftc.scorer.model.DecodeScore.BaseStatus.PARTIALLY_IN_BASE) redBasePts += 5;
-        if (match.getRedScore().getRobot2Base() == org.ftc.scorer.model.DecodeScore.BaseStatus.FULLY_IN_BASE) redBasePts += 10;
-        // Bonus if both fully in base
-        if (match.getRedScore().getRobot1Base() == org.ftc.scorer.model.DecodeScore.BaseStatus.FULLY_IN_BASE &&
-            match.getRedScore().getRobot2Base() == org.ftc.scorer.model.DecodeScore.BaseStatus.FULLY_IN_BASE) {
-            redBasePts += 10;
-        }
+        int redBasePts = calculateBasePts(match.getRedScore());
         
         // Opponent fouls give points to this alliance (5 pts minor, 15 pts major)
         int redFoulPts = match.getBlueScore().getMinorFouls() * 5 + match.getBlueScore().getMajorFouls() * 15;
@@ -499,16 +507,7 @@ public class StreamOutputWindow {
         int blueLeave = (match.getBlueScore().isRobot1Leave() ? 1 : 0) + (match.getBlueScore().isRobot2Leave() ? 1 : 0);
         
         // Calculate base points
-        int blueBasePts = 0;
-        if (match.getBlueScore().getRobot1Base() == org.ftc.scorer.model.DecodeScore.BaseStatus.PARTIALLY_IN_BASE) blueBasePts += 5;
-        if (match.getBlueScore().getRobot1Base() == org.ftc.scorer.model.DecodeScore.BaseStatus.FULLY_IN_BASE) blueBasePts += 10;
-        if (match.getBlueScore().getRobot2Base() == org.ftc.scorer.model.DecodeScore.BaseStatus.PARTIALLY_IN_BASE) blueBasePts += 5;
-        if (match.getBlueScore().getRobot2Base() == org.ftc.scorer.model.DecodeScore.BaseStatus.FULLY_IN_BASE) blueBasePts += 10;
-        // Bonus if both fully in base
-        if (match.getBlueScore().getRobot1Base() == org.ftc.scorer.model.DecodeScore.BaseStatus.FULLY_IN_BASE &&
-            match.getBlueScore().getRobot2Base() == org.ftc.scorer.model.DecodeScore.BaseStatus.FULLY_IN_BASE) {
-            blueBasePts += 10;
-        }
+        int blueBasePts = calculateBasePts(match.getBlueScore());
         
         // Opponent fouls give points to this alliance (5 pts minor, 15 pts major)
         int blueFoulPts = match.getRedScore().getMinorFouls() * 5 + match.getRedScore().getMajorFouls() * 15;
