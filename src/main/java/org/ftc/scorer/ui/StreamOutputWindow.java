@@ -426,8 +426,6 @@ public class StreamOutputWindow {
         return new LabeledBox(box, valueText);
     }
     
-
-    
     /**
      * Update the score bar layout based on match mode
      * IMPORTANT: This method recreates sections, so label references must be re-established
