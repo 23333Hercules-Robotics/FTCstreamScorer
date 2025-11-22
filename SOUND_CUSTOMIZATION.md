@@ -55,7 +55,7 @@ Your custom sounds will now be embedded in the JAR file.
 ### 1. countdown.wav
 **When:** 
 - At match start (0:00)
-- 8 seconds before AUTO ends (transition warning)
+- At start of TeleOp (0:38 - after 8-second transition)
 
 **Typical Content:** "Three... Two... One... Go!" or countdown beeps
 
@@ -65,7 +65,7 @@ Your custom sounds will now be embedded in the JAR file.
 - Team mascot saying countdown
 - Electronic beeps (countdown timer)
 - Sports arena countdown
-- "Starting in 8 seconds!" announcement
+- "Go go go!" announcement
 - Silence (if you don't want countdown)
 
 ---
@@ -192,15 +192,22 @@ Match Timeline:
 0:00  ─── countdown.wav plays (match START)
       ├── AUTONOMOUS (30 seconds)
       │   
-0:22  ─── countdown.wav plays (8 seconds before AUTO ends - transition warning)
-0:30  ─── endauto.wav plays (AUTO ends, TELEOP starts)
+0:30  ─── endauto.wav plays (START of TRANSITION period)
+      ├── TRANSITION (8 seconds - drivers pick up controllers)
+      │   
+0:38  ─── countdown.wav plays (START of TELEOP)
       ├── TELEOP (120 seconds total)
       │   
-2:10  ─── charge.wav plays (END GAME begins - last 20 seconds)
+2:18  ─── charge.wav plays (END GAME begins - last 20 seconds)
       │   
-2:30  ─── endmatch.wav plays (match ENDS)
+2:38  ─── endmatch.wav plays (match ENDS)
       │
       └── results.wav plays MANUALLY when breakdown button pressed
+
+Total Match Time: 2:38 (158 seconds)
+- AUTO: 30 seconds
+- TRANSITION: 8 seconds
+- TELEOP: 120 seconds (including 20-second end game)
 ```
 
 ## Advanced: Add New Sound Events

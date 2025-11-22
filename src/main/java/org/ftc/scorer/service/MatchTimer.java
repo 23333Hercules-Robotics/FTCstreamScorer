@@ -13,11 +13,14 @@ import javafx.util.Duration;
  * Manages match timing and state transitions
  * FTC DECODE match timing:
  * - 30 seconds autonomous
+ * - 8 seconds transition (drivers pick up controllers)
  * - 2 minute (120 seconds) teleop
- * - Last 20 seconds is end game (at 2:10 / 130 seconds total)
+ * - Last 20 seconds is end game
+ * Total: 2:38 (158 seconds)
  */
 public class MatchTimer {
     private static final int AUTO_DURATION = 30;
+    private static final int TRANSITION_DURATION = 8; // 8 second transition period
     private static final int TELEOP_DURATION = 120;
     private static final int ENDGAME_START = 110; // End game starts at 110 seconds (20 sec before end)
     
@@ -62,20 +65,28 @@ public class MatchTimer {
             int remaining = AUTO_DURATION - totalSeconds;
             secondsRemaining.set(remaining);
             
-            // Sound at 8 seconds remaining (transition warning from AUTO to TELEOP)
-            if (remaining == 8) {
-                audioService.playCountdown(); // 8-second transition sound
+            // End of AUTO - transition to TRANSITION period
+            if (remaining <= 0) {
+                match.setState(Match.MatchState.TRANSITION);
+                currentPhase.set("TRANSITION");
+                secondsRemaining.set(TRANSITION_DURATION);
+                totalSeconds = 0; // Reset for transition
+                audioService.playEndAuto(); // Sound plays at START of 8-second transition
             }
+        } else if (match.getState() == Match.MatchState.TRANSITION) {
+            // 8-second transition period (drivers pick up controllers)
+            int remaining = TRANSITION_DURATION - totalSeconds;
+            secondsRemaining.set(remaining);
             
-            // Transition to teleop at 0
+            // End of TRANSITION - start TELEOP
             if (remaining <= 0) {
                 match.setState(Match.MatchState.TELEOP);
                 currentPhase.set("TELEOP");
                 secondsRemaining.set(TELEOP_DURATION);
                 totalSeconds = 0; // Reset for teleop
-                audioService.playEndAuto(); // Start of TeleOp sound
+                audioService.playCountdown(); // Start of TeleOp sound
             }
-        } else if (match.getState() == Match.MatchState.TELEOP) {
+        } else if (match.getState() == Match.MatchState.TELEOP || match.getState() == Match.MatchState.END_GAME) {
             int remaining = TELEOP_DURATION - totalSeconds;
             secondsRemaining.set(remaining);
             

@@ -119,6 +119,7 @@ public class Match {
     public enum MatchState {
         NOT_STARTED,
         AUTONOMOUS,
+        TRANSITION,  // 8-second period between AUTO and TELEOP (drivers pick up controllers)
         TELEOP,
         END_GAME,
         FINISHED
