@@ -32,7 +32,6 @@ public class StreamOutputWindow {
     private Label blueScoreLabel;
     private Label timerLabel;
     private Label phaseLabel;
-    private Label teamNumbersLabel;  // Deprecated - kept for compatibility
     
     // Breakdown labels for detailed scoring
     private Label redClassifiedLabel, redOverflowLabel, redMotifLabel, redLeaveLabel, redBaseLabel, redFoulLabel;
@@ -41,8 +40,8 @@ public class StreamOutputWindow {
     
     // Helper class to return box and label together
     private static class LabeledBox {
-        VBox box;
-        Label label;
+        final VBox box;
+        final Label label;
         LabeledBox(VBox box, Label label) {
             this.box = box;
             this.label = label;
@@ -51,9 +50,9 @@ public class StreamOutputWindow {
     
     // Helper class for stacked boxes with two labels
     private static class StackedLabeledBox {
-        VBox box;
-        Label topLabel;
-        Label bottomLabel;
+        final VBox box;
+        final Label topLabel;
+        final Label bottomLabel;
         StackedLabeledBox(VBox box, Label topLabel, Label bottomLabel) {
             this.box = box;
             this.topLabel = topLabel;
@@ -427,21 +426,7 @@ public class StreamOutputWindow {
         return new LabeledBox(box, valueText);
     }
     
-    private HBox createTopBar() {
-        HBox bar = new HBox(20);
-        bar.setAlignment(Pos.CENTER);
-        bar.setPadding(new Insets(10, 20, 10, 20));
-        bar.setStyle("-fx-background-color: rgba(0, 0, 0, 0.7); -fx-background-radius: 10;");
-        
-        // Team numbers (kept for compatibility)
-        teamNumbersLabel = new Label("");
-        teamNumbersLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
-        teamNumbersLabel.setTextFill(Color.WHITE);
-        
-        bar.getChildren().add(teamNumbersLabel);
-        
-        return bar;
-    }
+
     
     /**
      * Update the score bar layout based on match mode
