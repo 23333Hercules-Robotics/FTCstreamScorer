@@ -99,8 +99,8 @@ public class MatchTimer {
             
             // Match ends
             if (remaining <= 0) {
-                match.setState(Match.MatchState.FINISHED);
-                currentPhase.set("FINISHED");
+                match.setState(Match.MatchState.UNDER_REVIEW);
+                currentPhase.set("UNDER REVIEW");
                 secondsRemaining.set(0);
                 audioService.playEndMatch(); // End of game sound
                 
