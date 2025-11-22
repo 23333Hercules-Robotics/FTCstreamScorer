@@ -22,7 +22,7 @@ public class MatchTimer {
     private static final int AUTO_DURATION = 30;
     private static final int TRANSITION_DURATION = 8; // 8 second transition period
     private static final int TELEOP_DURATION = 120;
-    private static final int ENDGAME_START = 110; // End game starts at 110 seconds (20 sec before end)
+    private static final int ENDGAME_START = 100; // End game starts at 100 seconds (20 sec before end)
     
     private final Match match;
     private final AudioService audioService;
