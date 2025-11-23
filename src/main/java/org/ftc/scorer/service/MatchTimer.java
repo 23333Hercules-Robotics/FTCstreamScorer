@@ -57,10 +57,11 @@ public class MatchTimer {
         waitingForSoundToEnd = true;
         
         // AT START: Play countdown → matchstart, WAIT for both sounds to finish
+        // Note: Both use countdown.wav as there's no separate matchstart.wav file
         audioService.playCountdown(() -> {
-            // After countdown, play matchstart (using countdown again as matchstart)
+            // After countdown, play matchstart (reusing countdown.wav)
             audioService.playCountdown(() -> {
-                // Both sounds finished, ready to start countdown timer
+                // Both sounds finished, ready to start 3-2-1 countdown timer
                 waitingForSoundToEnd = false;
             });
         });
@@ -137,6 +138,8 @@ public class MatchTimer {
             if (remaining <= 0) {
                 inCountdown = false;
                 countdownDisplay.set("");
+                // Note: Not calling stopAll() here - transition audio is allowed to continue
+                // into teleop if it hasn't finished, per user requirements (NO WAIT behavior)
                 match.setState(Match.MatchState.TELEOP);
                 currentPhase.set("TELEOP");
                 secondsRemaining.set(TELEOP_DURATION);
