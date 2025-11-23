@@ -109,7 +109,8 @@ public class MatchTimer {
                     secondsRemaining.set(TRANSITION_DURATION);
                     totalSeconds = 0; // Reset for transition
                     waitingForSoundToEnd = false;
-                    // Play countdown during the transition period
+                    // Play countdown during the transition period (8 seconds)
+                    // Note: Countdown should be under 5 seconds (per documentation) to complete before teleop
                     audioService.playCountdown();
                 });
             }
@@ -128,6 +129,8 @@ public class MatchTimer {
             if (remaining <= 0) {
                 inCountdown = false;
                 countdownDisplay.set("");
+                // Stop any ongoing countdown audio before transitioning to teleop
+                audioService.stopAll();
                 match.setState(Match.MatchState.TELEOP);
                 currentPhase.set("TELEOP");
                 secondsRemaining.set(TELEOP_DURATION);
