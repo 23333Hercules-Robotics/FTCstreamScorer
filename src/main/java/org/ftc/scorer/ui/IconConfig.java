@@ -50,37 +50,53 @@ public class IconConfig {
         return tieIcon;
     }
     
-    // Setters for configuration
+    // Setters for configuration (with null/empty validation)
     public static void setClassifiedIcon(String icon) {
-        classifiedIcon = icon;
+        if (icon != null && !icon.isEmpty()) {
+            classifiedIcon = icon;
+        }
     }
     
     public static void setOverflowIcon(String icon) {
-        overflowIcon = icon;
+        if (icon != null && !icon.isEmpty()) {
+            overflowIcon = icon;
+        }
     }
     
     public static void setPatternIcon(String icon) {
-        patternIcon = icon;
+        if (icon != null && !icon.isEmpty()) {
+            patternIcon = icon;
+        }
     }
     
     public static void setLeaveIcon(String icon) {
-        leaveIcon = icon;
+        if (icon != null && !icon.isEmpty()) {
+            leaveIcon = icon;
+        }
     }
     
     public static void setBaseIcon(String icon) {
-        baseIcon = icon;
+        if (icon != null && !icon.isEmpty()) {
+            baseIcon = icon;
+        }
     }
     
     public static void setFoulIcon(String icon) {
-        foulIcon = icon;
+        if (icon != null && !icon.isEmpty()) {
+            foulIcon = icon;
+        }
     }
     
     public static void setTrophyIcon(String icon) {
-        trophyIcon = icon;
+        if (icon != null && !icon.isEmpty()) {
+            trophyIcon = icon;
+        }
     }
     
     public static void setTieIcon(String icon) {
-        tieIcon = icon;
+        if (icon != null && !icon.isEmpty()) {
+            tieIcon = icon;
+        }
     }
     
     /**
