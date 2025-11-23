@@ -54,9 +54,16 @@ public class MatchTimer {
         currentPhase.set("COUNTDOWN");
         countdownDisplay.set("3");
         inCountdown = true;
+        waitingForSoundToEnd = true;
         
-        // Play countdown at start
-        audioService.playCountdown();
+        // AT START: Play countdown → matchstart, WAIT for both sounds to finish
+        audioService.playCountdown(() -> {
+            // After countdown, play matchstart (using countdown again as matchstart)
+            audioService.playCountdown(() -> {
+                // Both sounds finished, ready to start countdown timer
+                waitingForSoundToEnd = false;
+            });
+        });
         
         timeline = new Timeline(new KeyFrame(Duration.seconds(1), event -> tick()));
         timeline.setCycleCount(Timeline.INDEFINITE);
@@ -96,7 +103,7 @@ public class MatchTimer {
                 inCountdown = true;
             }
             
-            // End of AUTO - wait for sound to finish before transitioning
+            // AT 0:30 (endauto): Play endauto, WAIT for sound to finish
             if (remaining <= 0 && !waitingForSoundToEnd) {
                 waitingForSoundToEnd = true;
                 inCountdown = false;
@@ -104,13 +111,14 @@ public class MatchTimer {
                 
                 // Play endauto sound and transition when it finishes
                 audioService.playEndAuto(() -> {
+                    // THEN transition period: Play transition, DO NOT WAIT
                     match.setState(Match.MatchState.TRANSITION);
                     currentPhase.set("TRANSITION");
                     secondsRemaining.set(TRANSITION_DURATION);
                     totalSeconds = 0; // Reset for transition
                     waitingForSoundToEnd = false;
-                    // Play countdown during the transition period (8 seconds)
-                    // Note: Countdown should be under 5 seconds (per documentation) to complete before teleop
+                    // Play transition audio (using countdown.wav) during the 8-second period
+                    // Timer continues immediately, doesn't wait for sound
                     audioService.playCountdown();
                 });
             }
@@ -125,12 +133,10 @@ public class MatchTimer {
                 inCountdown = true;
             }
             
-            // End of TRANSITION - transition directly to TELEOP
+            // AFTER transition (end of 0:08): Start teleop, no sound
             if (remaining <= 0) {
                 inCountdown = false;
                 countdownDisplay.set("");
-                // Stop any ongoing countdown audio before transitioning to teleop
-                audioService.stopAll();
                 match.setState(Match.MatchState.TELEOP);
                 currentPhase.set("TELEOP");
                 secondsRemaining.set(TELEOP_DURATION);
@@ -140,11 +146,11 @@ public class MatchTimer {
             int remaining = TELEOP_DURATION - totalSeconds;
             secondsRemaining.set(remaining);
             
-            // Start of End Game at 20 seconds remaining (100 seconds elapsed)
+            // WHEN teleop has 0:20 remaining: Play endgame, DO NOT WAIT (timer continues)
             if (totalSeconds == ENDGAME_START && match.getState() != Match.MatchState.END_GAME) {
                 match.setState(Match.MatchState.END_GAME);
                 currentPhase.set("ENDGAME");
-                audioService.playCharge(); // Start of End Game sound
+                audioService.playCharge(); // Play endgame sound (charge.wav), timer continues
             }
             
             // Show countdown in last 3 seconds
@@ -156,7 +162,7 @@ public class MatchTimer {
                 inCountdown = false;
             }
             
-            // Match ends - wait for sound to finish before transitioning
+            // AT END_MATCH (teleop reaches 0:00): Play matchend, WAIT for matchend to finish
             if (remaining <= 0 && !waitingForSoundToEnd) {
                 waitingForSoundToEnd = true;
                 match.setState(Match.MatchState.FINISHED);
@@ -165,7 +171,7 @@ public class MatchTimer {
                 countdownDisplay.set("");
                 inCountdown = false;
                 
-                // Play end match sound and transition to UNDER REVIEW when sound finishes
+                // Play matchend sound and transition to UNDER REVIEW when sound finishes
                 audioService.playEndMatch(() -> {
                     match.setState(Match.MatchState.UNDER_REVIEW);
                     currentPhase.set("UNDER REVIEW");
