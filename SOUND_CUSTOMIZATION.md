@@ -55,7 +55,7 @@ Your custom sounds will now be embedded in the JAR file.
 ### 1. countdown.wav
 **When:** 
 - At match start (0:00)
-- At start of TeleOp (0:38 - after 8-second transition)
+- During the 8-second transition period (0:30-0:38, after autonomous ends)
 
 **Typical Content:** "Three... Two... One... Go!" or countdown beeps
 
@@ -192,11 +192,11 @@ Match Timeline:
 0:00  ─── countdown.wav plays (match START)
       ├── AUTONOMOUS (30 seconds)
       │   
-0:30  ─── endauto.wav plays (START of TRANSITION period)
+0:30  ─── endauto.wav plays
+      │   countdown.wav plays (DURING TRANSITION period)
       ├── TRANSITION (8 seconds - drivers pick up controllers)
       │   
-0:38  ─── countdown.wav plays (START of TELEOP)
-      ├── TELEOP (120 seconds total)
+0:38  ─── TELEOP begins (120 seconds total)
       │   
 2:18  ─── charge.wav plays (END GAME begins - last 20 seconds)
       │   
@@ -206,7 +206,7 @@ Match Timeline:
 
 Total Match Time: 2:38 (158 seconds)
 - AUTO: 30 seconds
-- TRANSITION: 8 seconds
+- TRANSITION: 8 seconds (countdown.wav plays during this period)
 - TELEOP: 120 seconds (including 20-second end game)
 ```
 
