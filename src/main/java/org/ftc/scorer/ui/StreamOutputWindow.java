@@ -294,35 +294,14 @@ public class StreamOutputWindow {
     }
     
     /**
-     * Load icon from resources (PNG or SVG)
+     * Create emoji label for icon
      */
-    private ImageView loadIcon(String iconName, int size) {
-        try {
-            // Try PNG first
-            java.net.URL pngResource = getClass().getResource("/images/" + iconName + ".png");
-            if (pngResource != null) {
-                Image image = new Image(pngResource.toString(), size, size, true, true);
-                ImageView imageView = new ImageView(image);
-                imageView.setFitWidth(size);
-                imageView.setFitHeight(size);
-                return imageView;
-            }
-            
-            // Try SVG
-            java.net.URL svgResource = getClass().getResource("/images/" + iconName + ".svg");
-            if (svgResource != null) {
-                Image image = new Image(svgResource.toString(), size, size, true, true);
-                ImageView imageView = new ImageView(image);
-                imageView.setFitWidth(size);
-                imageView.setFitHeight(size);
-                return imageView;
-            }
-        } catch (Exception e) {
-            System.err.println("Failed to load icon: " + iconName);
-        }
-        
-        // Fallback: return empty ImageView
-        return new ImageView();
+    private Label createEmojiIcon(String iconName, int size) {
+        String emoji = IconConfig.getIconByName(iconName);
+        Label emojiLabel = new Label(emoji);
+        emojiLabel.setFont(Font.font("Arial", size));
+        emojiLabel.setStyle("-fx-background-color: transparent;");
+        return emojiLabel;
     }
     
     /**
@@ -340,8 +319,8 @@ public class StreamOutputWindow {
         VBox content = new VBox(2);
         content.setAlignment(Pos.CENTER);
         
-        // Load icon (PNG or SVG)
-        ImageView icon = loadIcon(iconName, 24);
+        // Create emoji icon
+        Label icon = createEmojiIcon(iconName, 24);
         
         Label valueText = new Label(value);
         valueText.setFont(Font.font("Arial", FontWeight.BOLD, 16));
@@ -370,7 +349,7 @@ public class StreamOutputWindow {
         topSection.setPadding(new Insets(6, 8, 6, 8));
         topSection.setStyle("-fx-background-color: white;");
         
-        ImageView topIcon = loadIcon(iconName1, 20);
+        Label topIcon = createEmojiIcon(iconName1, 20);
         
         Label topValue = new Label(value1);
         topValue.setFont(Font.font("Arial", FontWeight.BOLD, 14));
@@ -389,7 +368,7 @@ public class StreamOutputWindow {
         bottomSection.setPadding(new Insets(6, 8, 6, 8));
         bottomSection.setStyle("-fx-background-color: white;");
         
-        ImageView bottomIcon = loadIcon(iconName2, 20);
+        Label bottomIcon = createEmojiIcon(iconName2, 20);
         
         Label bottomValue = new Label(value2);
         bottomValue.setFont(Font.font("Arial", FontWeight.BOLD, 14));
@@ -739,13 +718,13 @@ public class StreamOutputWindow {
         int redTotal = match.getRedTotalScore();
         int blueTotal = match.getBlueTotalScore();
         if (redTotal > blueTotal) {
-            winnerLabel.setText("🏆 RED ALLIANCE WINS! 🏆");
+            winnerLabel.setText(IconConfig.getTrophyIcon() + " RED ALLIANCE WINS! " + IconConfig.getTrophyIcon());
             winnerLabel.setTextFill(Color.rgb(255, 100, 100));
         } else if (blueTotal > redTotal) {
-            winnerLabel.setText("🏆 BLUE ALLIANCE WINS! 🏆");
+            winnerLabel.setText(IconConfig.getTrophyIcon() + " BLUE ALLIANCE WINS! " + IconConfig.getTrophyIcon());
             winnerLabel.setTextFill(Color.rgb(100, 150, 255));
         } else {
-            winnerLabel.setText("🤝 TIE MATCH! 🤝");
+            winnerLabel.setText(IconConfig.getTieIcon() + " TIE MATCH! " + IconConfig.getTieIcon());
             winnerLabel.setTextFill(Color.WHITE);
         }
         
