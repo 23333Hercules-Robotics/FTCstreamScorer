@@ -109,6 +109,8 @@ public class MatchTimer {
                     secondsRemaining.set(TRANSITION_DURATION);
                     totalSeconds = 0; // Reset for transition
                     waitingForSoundToEnd = false;
+                    // Play countdown during the transition period
+                    audioService.playCountdown();
                 });
             }
         } else if (match.getState() == Match.MatchState.TRANSITION) {
@@ -122,20 +124,14 @@ public class MatchTimer {
                 inCountdown = true;
             }
             
-            // End of TRANSITION - wait for sound to finish before starting TELEOP
-            if (remaining <= 0 && !waitingForSoundToEnd) {
-                waitingForSoundToEnd = true;
+            // End of TRANSITION - transition directly to TELEOP
+            if (remaining <= 0) {
                 inCountdown = false;
                 countdownDisplay.set("");
-                
-                // Play countdown sound and transition when it finishes
-                audioService.playCountdown(() -> {
-                    match.setState(Match.MatchState.TELEOP);
-                    currentPhase.set("TELEOP");
-                    secondsRemaining.set(TELEOP_DURATION);
-                    totalSeconds = 0; // Reset for teleop
-                    waitingForSoundToEnd = false;
-                });
+                match.setState(Match.MatchState.TELEOP);
+                currentPhase.set("TELEOP");
+                secondsRemaining.set(TELEOP_DURATION);
+                totalSeconds = 0; // Reset for teleop
             }
         } else if (match.getState() == Match.MatchState.TELEOP || match.getState() == Match.MatchState.END_GAME) {
             int remaining = TELEOP_DURATION - totalSeconds;
