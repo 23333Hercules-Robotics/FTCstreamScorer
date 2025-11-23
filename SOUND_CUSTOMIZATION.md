@@ -54,12 +54,16 @@ Your custom sounds will now be embedded in the JAR file.
 
 ### 1. countdown.wav
 **When:** 
-- At match start (0:00)
+- At match start (plays twice: first as countdown, then as matchstart)
 - During the 8-second transition period (0:30-0:38, after autonomous ends)
 
 **Typical Content:** "Three... Two... One... Go!" or countdown beeps
 
 **Official FTC:** Uses synthesized countdown voice
+
+**Usage:**
+- Plays TWICE at match start (countdown → matchstart) - timer waits for both to finish
+- Plays once during transition (timer does NOT wait - continues immediately)
 
 **Customization Ideas:**
 - Team mascot saying countdown
@@ -189,25 +193,34 @@ Navigate to `src/main/resources/audio/` and play files directly with:
 
 ```
 Match Timeline:
-0:00  ─── countdown.wav plays (match START)
-      ├── AUTONOMOUS (30 seconds)
+START ─── countdown.wav plays → countdown.wav plays (matchstart) → [WAITS for both]
+      │   3-2-1 visual countdown
       │   
-0:30  ─── endauto.wav plays
-      │   countdown.wav plays (DURING TRANSITION period)
-      ├── TRANSITION (8 seconds - drivers pick up controllers)
+0:00  ─── AUTONOMOUS begins (30 seconds)
       │   
-0:38  ─── TELEOP begins (120 seconds total)
+0:30  ─── endauto.wav plays → [WAITS for sound]
+      │   countdown.wav plays (transition) → [NO WAIT - timer starts immediately]
+      ├── TRANSITION (8 seconds - drivers pick up controllers, audio plays during)
       │   
-2:18  ─── charge.wav plays (END GAME begins - last 20 seconds)
+0:38  ─── TELEOP begins (120 seconds total) - NO SOUND
       │   
-2:38  ─── endmatch.wav plays (match ENDS)
+2:18  ─── charge.wav plays (endgame) → [NO WAIT - timer continues]
+      │   
+2:38  ─── endmatch.wav plays (matchend) → [WAITS for sound]
       │
       └── results.wav plays MANUALLY when breakdown button pressed
 
 Total Match Time: 2:38 (158 seconds)
 - AUTO: 30 seconds
-- TRANSITION: 8 seconds (countdown.wav plays during this period)
+- TRANSITION: 8 seconds (countdown.wav plays during, timer runs concurrently)
 - TELEOP: 120 seconds (including 20-second end game)
+
+Wait Behavior:
+- START: WAITS for countdown + matchstart
+- 0:30: WAITS for endauto
+- Transition: NO WAIT (timer runs while audio plays)
+- Endgame: NO WAIT (timer continues)
+- End: WAITS for matchend
 ```
 
 ## Advanced: Add New Sound Events
