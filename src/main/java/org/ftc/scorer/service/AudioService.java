@@ -5,7 +5,7 @@ import javafx.scene.media.MediaPlayer;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.ArrayList;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.List;
 
 /**
@@ -14,7 +14,7 @@ import java.util.List;
 public class AudioService {
     private final Map<String, Media> audioCache = new HashMap<>();
     private MediaPlayer currentPlayer;
-    private final List<MediaPlayer> activePlayers = new ArrayList<>();
+    private final List<MediaPlayer> activePlayers = new CopyOnWriteArrayList<>();
     
     public AudioService() {
         // Preload all audio files
@@ -113,8 +113,9 @@ public class AudioService {
     }
     
     public void stopAll() {
-        for (MediaPlayer player : new ArrayList<>(activePlayers)) {
+        for (MediaPlayer player : activePlayers) {
             player.stop();
+            player.dispose();
         }
         activePlayers.clear();
     }
