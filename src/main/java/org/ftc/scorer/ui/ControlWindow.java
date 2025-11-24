@@ -55,6 +55,9 @@ public class ControlWindow {
     private CheckBox soloModeCheckBox;
     private Button countdownButton;
     
+    // Scroll speed multiplier constant
+    private static final double SCROLL_SPEED_MULTIPLIER = 3.0;
+    
     public ControlWindow(Match match, MatchTimer matchTimer, WebcamService webcamService, StreamOutputWindow streamWindow, org.ftc.scorer.service.AudioService audioService) {
         this.match = match;
         this.matchTimer = matchTimer;
@@ -86,7 +89,7 @@ public class ControlWindow {
         // Increase scroll speed
         scrollPane.setVvalue(0);
         centerSection.setOnScroll(scrollEvent -> {
-            double deltaY = scrollEvent.getDeltaY() * 3; // Increase scroll speed by 3x
+            double deltaY = scrollEvent.getDeltaY() * SCROLL_SPEED_MULTIPLIER;
             scrollPane.setVvalue(scrollPane.getVvalue() - deltaY / centerSection.getBoundsInLocal().getHeight());
         });
         root.setCenter(scrollPane);
@@ -948,53 +951,44 @@ public class ControlWindow {
      */
     private void setupKeyboardShortcuts(Scene scene) {
         scene.setOnKeyPressed(event -> {
-            // Get current values from spinners
             switch (event.getCode()) {
-                case Q: // Add 3 classified artifacts to red (combined auto+teleop)
-                    int currentRedClassified = redTeleopClassified.getValue();
-                    redTeleopClassified.getValueFactory().setValue(currentRedClassified + 3);
+                case Q: // Add 3 classified artifacts to red teleop
+                    incrementSpinner(redTeleopClassified, 3);
                     event.consume();
                     break;
                     
-                case E: // Add 3 classified artifacts to blue (combined auto+teleop)
-                    int currentBlueClassified = blueTeleopClassified.getValue();
-                    blueTeleopClassified.getValueFactory().setValue(currentBlueClassified + 3);
+                case E: // Add 3 classified artifacts to blue teleop
+                    incrementSpinner(blueTeleopClassified, 3);
                     event.consume();
                     break;
                     
-                case A: // Add 1 classified artifact to red
-                    int currentRedClassified1 = redTeleopClassified.getValue();
-                    redTeleopClassified.getValueFactory().setValue(currentRedClassified1 + 1);
+                case A: // Add 1 classified artifact to red teleop
+                    incrementSpinner(redTeleopClassified, 1);
                     event.consume();
                     break;
                     
-                case D: // Add 1 classified artifact to blue
-                    int currentBlueClassified1 = blueTeleopClassified.getValue();
-                    blueTeleopClassified.getValueFactory().setValue(currentBlueClassified1 + 1);
+                case D: // Add 1 classified artifact to blue teleop
+                    incrementSpinner(blueTeleopClassified, 1);
                     event.consume();
                     break;
                     
-                case W: // Add 1 overflow to red
-                    int currentRedOverflow = redTeleopOverflow.getValue();
-                    redTeleopOverflow.getValueFactory().setValue(currentRedOverflow + 1);
+                case W: // Add 1 overflow to red teleop
+                    incrementSpinner(redTeleopOverflow, 1);
                     event.consume();
                     break;
                     
-                case S: // Add 1 overflow to blue
-                    int currentBlueOverflow = blueTeleopOverflow.getValue();
-                    blueTeleopOverflow.getValueFactory().setValue(currentBlueOverflow + 1);
+                case S: // Add 1 overflow to blue teleop
+                    incrementSpinner(blueTeleopOverflow, 1);
                     event.consume();
                     break;
                     
                 case Z: // Add 1 minor foul to red
-                    int currentRedMinor = redMinorFouls.getValue();
-                    redMinorFouls.getValueFactory().setValue(currentRedMinor + 1);
+                    incrementSpinner(redMinorFouls, 1);
                     event.consume();
                     break;
                     
                 case C: // Add 1 minor foul to blue
-                    int currentBlueMinor = blueMinorFouls.getValue();
-                    blueMinorFouls.getValueFactory().setValue(currentBlueMinor + 1);
+                    incrementSpinner(blueMinorFouls, 1);
                     event.consume();
                     break;
                     
@@ -1003,6 +997,14 @@ public class ControlWindow {
                     break;
             }
         });
+    }
+    
+    /**
+     * Helper method to increment a spinner value
+     */
+    private void incrementSpinner(Spinner<Integer> spinner, int increment) {
+        int currentValue = spinner.getValue();
+        spinner.getValueFactory().setValue(currentValue + increment);
     }
     
     /**
