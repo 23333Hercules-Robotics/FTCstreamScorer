@@ -1007,6 +1007,50 @@ public class ControlWindow {
         spinner.getValueFactory().setValue(currentValue + increment);
     }
     
+    // Public methods to allow StreamOutputWindow to update spinners via keyboard shortcuts
+    
+    /**
+     * Increment red teleop classified artifacts
+     */
+    public void incrementRedTeleopClassified(int increment) {
+        incrementSpinner(redTeleopClassified, increment);
+    }
+    
+    /**
+     * Increment blue teleop classified artifacts
+     */
+    public void incrementBlueTeleopClassified(int increment) {
+        incrementSpinner(blueTeleopClassified, increment);
+    }
+    
+    /**
+     * Increment red teleop overflow
+     */
+    public void incrementRedTeleopOverflow(int increment) {
+        incrementSpinner(redTeleopOverflow, increment);
+    }
+    
+    /**
+     * Increment blue teleop overflow
+     */
+    public void incrementBlueTeleopOverflow(int increment) {
+        incrementSpinner(blueTeleopOverflow, increment);
+    }
+    
+    /**
+     * Increment red minor fouls
+     */
+    public void incrementRedMinorFouls(int increment) {
+        incrementSpinner(redMinorFouls, increment);
+    }
+    
+    /**
+     * Increment blue minor fouls
+     */
+    public void incrementBlueMinorFouls(int increment) {
+        incrementSpinner(blueMinorFouls, increment);
+    }
+    
     /**
      * Show keyboard shortcuts dialog
      */
