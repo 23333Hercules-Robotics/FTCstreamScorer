@@ -15,19 +15,28 @@ if "%JAVA_HOME%"=="" (
     exit /b 1
 )
 
-REM Check Java version
+REM Check Java version (handles both old "1.8.x" format and new "17.x" format)
 for /f "tokens=3" %%g in ('java -version 2^>^&1 ^| findstr /i "version"') do (
-    set JAVA_VERSION=%%g
+    set JAVA_VERSION_STRING=%%g
 )
-set JAVA_VERSION=%JAVA_VERSION:"=%
-for /f "delims=. tokens=1" %%v in ("%JAVA_VERSION%") do set JAVA_MAJOR=%%v
+set JAVA_VERSION_STRING=%JAVA_VERSION_STRING:"=%
+
+REM Parse major version: for "1.8.x" use second number, for "17.x" use first number
+set FIRST_PART=
+for /f "delims=. tokens=1,2" %%a in ("%JAVA_VERSION_STRING%") do (
+    if "%%a"=="1" (
+        set JAVA_MAJOR=%%b
+    ) else (
+        set JAVA_MAJOR=%%a
+    )
+)
 if %JAVA_MAJOR% LSS 14 (
     echo Error: Java 14 or higher required for jpackage
-    echo Current Java version: %JAVA_VERSION%
+    echo Current Java version: %JAVA_VERSION_STRING%
     exit /b 1
 )
 
-echo Using Java: %JAVA_VERSION%
+echo Using Java: %JAVA_VERSION_STRING%
 echo.
 
 REM Navigate to project root

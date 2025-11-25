@@ -28,16 +28,22 @@ if [ -z "$JAVA_HOME" ]; then
     fi
 fi
 
-# Check Java version
-JAVA_VERSION=$(java -version 2>&1 | head -1 | cut -d'"' -f2 | cut -d'.' -f1)
+# Check Java version (handles both old "1.8.x" format and new "17.x" format)
+JAVA_VERSION_STRING=$(java -version 2>&1 | head -1 | cut -d'"' -f2)
+# Extract major version: for "1.8.x" use second number, for "17.x" use first number
+if [[ "$JAVA_VERSION_STRING" == 1.* ]]; then
+    JAVA_VERSION=$(echo "$JAVA_VERSION_STRING" | cut -d'.' -f2)
+else
+    JAVA_VERSION=$(echo "$JAVA_VERSION_STRING" | cut -d'.' -f1)
+fi
 if [ "$JAVA_VERSION" -lt 14 ]; then
     echo "Error: Java 14 or higher required for jpackage"
-    echo "Current Java version: $JAVA_VERSION"
+    echo "Current Java version: $JAVA_VERSION_STRING"
     echo "Install newer Java with: sudo apt install openjdk-17-jdk"
     exit 1
 fi
 
-echo "Using Java version: $JAVA_VERSION"
+echo "Using Java version: $JAVA_VERSION_STRING"
 echo ""
 
 # Step 1: Clean and build JAR

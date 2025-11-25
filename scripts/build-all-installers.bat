@@ -73,7 +73,7 @@ echo ============================================================
 echo.
 echo Installers created in: target\installer\
 echo.
-dir ..\target\installer\* 2>nul
+dir "%~dp0..\target\installer\*" 2>nul
 echo.
 echo Note: macOS installers can only be built on a Mac.
 echo       See scripts\build-macos-installer.bat for more info.
