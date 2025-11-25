@@ -29,6 +29,9 @@ public class ScorerApplication extends Application {
         StreamOutputWindow streamWindow = new StreamOutputWindow(match, matchTimer);
         ControlWindow controlWindow = new ControlWindow(match, matchTimer, webcamService, streamWindow, audioService);
         
+        // Connect stream window to control window for keyboard shortcut synchronization
+        streamWindow.setControlWindow(controlWindow);
+        
         // Connect webcam to stream window
         webcamService.setFrameListener(streamWindow::updateWebcamFrame);
         

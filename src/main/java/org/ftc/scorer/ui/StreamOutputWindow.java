@@ -70,12 +70,23 @@ public class StreamOutputWindow {
     private Label motifLabel;
     private boolean motifHighlighted = false;
     
+    // Reference to control window for keyboard shortcut synchronization
+    private ControlWindow controlWindow;
+    
     public StreamOutputWindow(Match match, MatchTimer matchTimer) {
         this.match = match;
         this.matchTimer = matchTimer;
         this.stage = new Stage();
         
         initializeUI();
+    }
+    
+    /**
+     * Set the control window reference for keyboard shortcut synchronization.
+     * This allows keyboard shortcuts used in the stream window to update the control panel.
+     */
+    public void setControlWindow(ControlWindow controlWindow) {
+        this.controlWindow = controlWindow;
     }
     
     private void initializeUI() {
@@ -97,8 +108,69 @@ public class StreamOutputWindow {
         stage.setScene(scene);
         stage.setTitle("FTC Stream Output");
         
+        // Set up keyboard shortcuts for scoring from stream window
+        setupKeyboardShortcuts(scene);
+        
         // Update scores periodically
         startScoreUpdater();
+    }
+    
+    /**
+     * Set up keyboard shortcuts for quick scoring from the stream window.
+     * These shortcuts update the control window spinners to keep UI in sync.
+     */
+    private void setupKeyboardShortcuts(Scene scene) {
+        scene.setOnKeyPressed(event -> {
+            if (controlWindow == null) {
+                return; // Control window not yet set
+            }
+            
+            switch (event.getCode()) {
+                case Q: // Add 3 classified artifacts to red teleop
+                    controlWindow.incrementRedTeleopClassified(3);
+                    event.consume();
+                    break;
+                    
+                case E: // Add 3 classified artifacts to blue teleop
+                    controlWindow.incrementBlueTeleopClassified(3);
+                    event.consume();
+                    break;
+                    
+                case A: // Add 1 classified artifact to red teleop
+                    controlWindow.incrementRedTeleopClassified(1);
+                    event.consume();
+                    break;
+                    
+                case D: // Add 1 classified artifact to blue teleop
+                    controlWindow.incrementBlueTeleopClassified(1);
+                    event.consume();
+                    break;
+                    
+                case W: // Add 1 overflow to red teleop
+                    controlWindow.incrementRedTeleopOverflow(1);
+                    event.consume();
+                    break;
+                    
+                case S: // Add 1 overflow to blue teleop
+                    controlWindow.incrementBlueTeleopOverflow(1);
+                    event.consume();
+                    break;
+                    
+                case Z: // Add 1 minor foul to red
+                    controlWindow.incrementRedMinorFouls(1);
+                    event.consume();
+                    break;
+                    
+                case C: // Add 1 minor foul to blue
+                    controlWindow.incrementBlueMinorFouls(1);
+                    event.consume();
+                    break;
+                    
+                default:
+                    // Do nothing for other keys
+                    break;
+            }
+        });
     }
     
     private VBox createOverlay() {
